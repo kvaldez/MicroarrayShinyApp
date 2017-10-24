@@ -130,7 +130,7 @@ shinyUI(
     
     shinyjs:: hidden(
       div(id= "hide3",
-    sidebarPanel(
+    mainPanel(
       actionButton("test","Contrast")),
     mainPanel(
       uiOutput("value"))
@@ -138,12 +138,40 @@ shinyUI(
     
     shinyjs::hidden(
       div(id='hideAnalysis',
-          sidebarPanel(
-            actionButton(inputId="analyze",label="Start")
-          ))
+        mainPanel(
+          actionButton(inputId="analyze",label="Start")
+        )
+    )),
+    
+    shinyjs::hidden(
+    div(id='hideResults',
+        mainPanel(
+          navbarPage(title = "Results",
+                     navbarMenu (title="Pre-normalization QC plots",
+                                 tabPanel("Histogram",plotOutput("rawhist")),
+                                 tabPanel("Maplots", uiOutput("rawmaplot")),
+                                 tabPanel("Boxplots", plotOutput("rawbox")),
+                                 tabPanel("RLE",plotOutput("rle")),
+                                 tabPanel("NUSE",plotOutput("nuse"))
+                     ),
+                    navbarMenu (title="Post-normalization plots",
+                                tabPanel("Histogram",plotOutput("rmahist")),
+                                tabPanel("Maplots",uiOutput("normaplot")),
+                                tabPanel("Boxplots",plotOutput("rmabox")),
+                                tabPanel("3D-PCA",rglwidgetOutput("pca3d")),
+                                tabPanel("Interactive Heatmap",plotlyOutput("heatmap"))
+                    ),
+                    navbarMenu (title="DEG-Enrichments-tables",
+                                tabPanel("Differentially Expressed Genes",DT::dataTableOutput("deg"))
+                    )
+          )
+        )
+    )
     )
   )
 )
+ 
+ 
 
   
   

@@ -68,7 +68,9 @@ library(htmltools)
 library(heatmaply)
 library(Biobase)
 
-shinyServer(function(input, output, session) {
+setwd('/Users/valdezkm/Documents/MicroarrayPipeline_VERSION2/MicroarrayShinyApp')
+
+shinyServer(function(input, output) {
   
   v <- reactiveValues(data = NULL, platform=NULL)
   
@@ -97,6 +99,13 @@ shinyServer(function(input, output, session) {
     input$test,
     isolate({
       shinyjs:: show("hideAnalysis")
+    })
+  )
+  
+  observeEvent(
+    input$analyze,
+    isolate({
+      shinyjs:: show("hideResults")
     })
   )
   
@@ -441,30 +450,45 @@ shinyServer(function(input, output, session) {
         ), 
         TRUE:input$test)
         data.frame(side1, vs.side2)
+  
+
         
       }, sanitize.text.function = function(x) x)
     })
   })
-  observeEvent(input$analyze, {
-      raw=reactive(input$analyze,
+  observeEvent(
+    input$analyze, {
+      isolate({
+      raw <- reactive(
         {
       withProgress(message = 'Loading files...', value = 0.25, {
       id=input$gseid
       id = gsub(" ","",id,fixed=TRUE) 
       
-      supp = getGEOSuppFiles(id, makeDirectory = T, baseDir = getwd())
+      system(paste0('rm *.CEL.gz'))        #removes previous CEL files
+      getGEOSuppFiles(id, makeDirectory = T, baseDir = getwd())
       fileID = paste0(id, '_RAW.tar')
       #system(paste0('tar -xvf', fileID))
       untar(paste0(getwd(),'/',id,'/',fileID))
       incProgress(0.25)
-      
+ 
+      #cels = paste0(Pheno$gsm,'_',Pheno$title,'.CEL.gz')   #adds filename
       Pheno = v$data
-      cels = paste0(Pheno$gsm,'_',Pheno$title,'.CEL.gz')   #adds filename
-      rownames(Pheno) = cels
+      system(paste0('ls ',getwd(),'/*.gz > SampleName.txt'))    #list contents of new directory with zipped CEL files
+      SampleName = read.delim('SampleName.txt', sep='\n', header = F)
+      SampleName = basename(as.character(unlist(SampleName)))
+      rownames(Pheno) = SampleName
+      cels = SampleName
+      
+      if (length(grep('*CEL*',SampleName,ignore.case = T)) == 0) {
+        info("Raw files must be CEL files")
+      }
+      
       incProgress(0.25)
       
       pd = AnnotatedDataFrame(Pheno)
       celfiles = read.celfiles(cels, phenoData = pd)
+      colnames(pData(celfiles))[2] = 'SampleID'     
       cat(celfiles@annotation,file="annotation.txt")
       
       if (celfiles@annotation!="pd.hg.u133.plus.2" & celfiles@annotation!="pd.mogene.2.0.st" & celfiles@annotation!="pd.hugene.2.0.st" & celfiles@annotation!="pd.clariom.s.human.ht" & celfiles@annotation!="pd.clariom.s.human" & celfiles@annotation!="pd.clariom.s.mouse.ht" & celfiles@annotation!="pd.clariom.s.mouse" & celfiles@annotation!='pd.mouse430.2' & celfiles@annotation!='pd.hg.u133a' & celfiles@annotation!='pd.hugene.1.0.st.v1' & celfiles@annotation!='pd.mogene.1.0.st.v1' & celfiles@annotation!='pd.hg.u133a.2' & celfiles@annotation!='pd.huex.1.0.st.v2' & celfiles@annotation!='pd.hg.u219' & celfiles@annotation!='pd.mg.u74av2' & celfiles@annotation!='pd.mouse430a.2' & celfiles@annotation!='pd.moe430a' & celfiles@annotation!='pd.hg.u95av2' & celfiles@annotation!='pd.hta.2.0' & celfiles@annotation!='pd.moex.1.0.st.v1' & celfiles@annotation!='pd.hg.u133b') {
@@ -477,30 +501,374 @@ shinyServer(function(input, output, session) {
       celfiles
       })
 })
+      
+      norm=reactive(
+        {
+          withProgress(message = 'Normalization', detail = 'starting ...', value = 0, {
+            if (raw()@annotation=="pd.hg.u133.plus.2" | raw()@annotation=="pd.clariom.s.human.ht" | raw()@annotation=="pd.clariom.s.human" | raw()@annotation=="pd.clariom.s.mouse.ht" | raw()@annotation=="pd.clariom.s.mouse" | raw()@annotation=='pd.mouse430.2' | raw()@annotation=='pd.hg.u133a' | raw()@annotation=='pd.hg.u133a.2' | raw()@annotation=='pd.hg.u219' | raw()@annotation=='pd.mg.u74av2' | raw()@annotation=='pd.mouse430a.2' | raw()@annotation=='pd.moe430a' | raw()@annotation=='pd.hg.u95av2' | raw()@annotation=='pd.hg.u133b') {
+              incProgress(0.5)
+              celfiles.rma =rma(raw(), background=TRUE, normalize=TRUE, subset=NULL)
+            } else {
+              incProgress(0.5)
+              celfiles.rma =rma(raw(), background=TRUE, normalize=TRUE, subset=NULL, target="core")
+            }
+          })
+        })
+      qc=reactive(
+        {
+          withProgress(message = 'Fitting probe level model', detail = 'starting ...', value = 0.75, {
+            validate(
+              need(raw()@annotation!= "pd.mogene.1.0.st.v1", 'NUSE and RLE plots unavailable for this platform.')
+            )
+            celfiles.qc=fitProbeLevelModel(raw())
+          })
+        }
+      )
+      # list of DEG
+      deg=reactive(
+        {
+          ##-------------
+          withProgress(message = 'Computing differentially expressed genes', value = 0, {
+            facs <- factor(pData(raw())$SampleGroup)
+            labfacs=levels(facs)
+            nbfacs=length(labfacs)
+            file1=input$const
+
+            contra=read.delim(file1$datapath)
+            nb=dim(contra)[1]
+            cons=c()
+            #validate(
+            #  need((contra[k,1] %in% labfacs) & (contra[k,2] %in% labfacs), "One of the groups in contrast file does not match a group in phenotype file. Make sure names match and upload again. 
+            #Once correct file is entered, 'Computing differentially expressed genes' message will display.")
+            #)
+            
+            for (k in 1:nb) {
+              if ((contra[k,1] %in% labfacs) & (contra[k,2] %in% labfacs) )
+              {
+                cons=c(cons,paste(contra[k,1],"-",contra[k,2],sep=""))
+              } else {
+                #cat("One of the groups in contrasts file at line :",k+1,"does not match a group in phenotype file..Quitting!!!\n")
+                info('One of the groups in contrast file does not match a group in phenotype file. Make sure names match and upload again.')
+                print( contra )
+                stopApp(-1)
+              }
+            }
+            
+            
+            myfactor <- factor(pData(norm())$SampleGroup)
+            design1 <- model.matrix(~0+myfactor)
+            colnames(design1) <- levels(myfactor)
+            
+            fit1 <- lmFit(norm(),design1)
+            contrast.matrix <- makeContrasts(contrasts=cons,levels=design1)
+            
+            fit2 <- contrasts.fit(fit1, contrast.matrix)
+            ebayes.fit2=eBayes(fit2) # smooths the std error
+            incProgress(0.25, detail = 'Limma model fitted')
+            # #EXTRACTING ALL GENES FOR EACH CONTRAST
+            
+            ##ANNOTATE PROBESET IDS FROM ANNOTATION PACKAGE FROM BIOCONDUCTOR
+            ## load libraries as sources of annotation
+            
+            #library(mogene20sttranscriptcluster.db)
+            #if (input$Platform=="mst2") {
+            #if (raw()@annotation=="pd.mogene.2.0.st") {  
+            #  Annot <- data.frame(ACCNUM=sapply(contents(mogene20sttranscriptclusterACCNUM), paste, collapse=", "), SYMBOL=sapply(contents(mogene20sttranscriptclusterSYMBOL), paste, collapse=", "), DESC=sapply(contents(mogene20sttranscriptclusterGENENAME), paste, collapse=", "))
+            #} else {
+            # if (input$Platform=="h133p2") {
+            #   if (raw()@annotation=="pd.hg.u133.plus.2") {
+            #     Annot <- data.frame(ACCNUM=sapply(contents(hgu133plus2ACCNUM), paste, collapse=", "), SYMBOL=sapply(contents(hgu133plus2SYMBOL), paste, collapse=", "), DESC=sapply(contents(hgu133plus2GENENAME), paste, collapse=", "))
+            #  } 
+            #} 
+            
+            if (raw()@annotation=="pd.mogene.2.0.st") {  
+              Annot <- data.frame(ACCNUM=sapply(contents(mogene20sttranscriptclusterACCNUM), paste, collapse=", "), SYMBOL=sapply(contents(mogene20sttranscriptclusterSYMBOL), paste, collapse=", "), DESC=sapply(contents(mogene20sttranscriptclusterGENENAME), paste, collapse=", "))
+            } else {
+              # if (input$Platform=="h133p2") {
+              if (raw()@annotation=="pd.hg.u133.plus.2") {
+                Annot <- data.frame(ACCNUM=sapply(contents(hgu133plus2ACCNUM), paste, collapse=", "), SYMBOL=sapply(contents(hgu133plus2SYMBOL), paste, collapse=", "), DESC=sapply(contents(hgu133plus2GENENAME), paste, collapse=", "))
+              } else {
+                if (raw()@annotation=="pd.hugene.2.0.st") {
+                  Annot <- data.frame(ACCNUM=sapply(contents(hugene20sttranscriptclusterACCNUM), paste, collapse=", "), SYMBOL=sapply(contents(hugene20sttranscriptclusterSYMBOL), paste, collapse=", "), DESC=sapply(contents(hugene20sttranscriptclusterGENENAME), paste, collapse=", "))
+                } else {
+                  if (raw()@annotation=="pd.clariom.s.human.ht") {
+                    Annot <- data.frame(ACCNUM=sapply(contents(clariomshumanhttranscriptclusterACCNUM), paste, collapse=", "), SYMBOL=sapply(contents(clariomshumanhttranscriptclusterSYMBOL), paste, collapse=", "), DESC=sapply(contents(clariomshumanhttranscriptclusterGENENAME), paste, collapse=", "))
+                  } else {
+                    if (raw()@annotation=="pd.clariom.s.mouse.ht") {
+                      Annot <- data.frame(ACCNUM=sapply(contents(clariomsmousehttranscriptclusterACCNUM), paste, collapse=", "), SYMBOL=sapply(contents(clariomsmousehttranscriptclusterSYMBOL), paste, collapse=", "), DESC=sapply(contents(clariomsmousehttranscriptclusterGENENAME), paste, collapse=", "))
+                    } else {
+                      if (raw()@annotation=="pd.clariom.s.mouse") {
+                        Annot <- data.frame(ACCNUM=sapply(contents(clariomsmousetranscriptclusterACCNUM), paste, collapse=", "), SYMBOL=sapply(contents(clariomsmousetranscriptclusterSYMBOL), paste, collapse=", "), DESC=sapply(contents(clariomsmousetranscriptclusterGENENAME), paste, collapse=", "))
+                      } else {
+                        if (raw()@annotation=="pd.clariom.s.human") {
+                          Annot <- data.frame(ACCNUM=sapply(contents(clariomshumantranscriptclusterACCNUM), paste, collapse=", "), SYMBOL=sapply(contents(clariomshumantranscriptclusterSYMBOL), paste, collapse=", "), DESC=sapply(contents(clariomshumantranscriptclusterGENENAME), paste, collapse=", "))
+                        } else {
+                          if (raw()@annotation=="pd.mouse430.2") {
+                            Annot <- data.frame(ACCNUM=sapply(contents(mouse4302ACCNUM), paste, collapse=", "), SYMBOL=sapply(contents(mouse4302SYMBOL), paste, collapse=", "), DESC=sapply(contents(mouse4302GENENAME), paste, collapse=", "))
+                          } else {
+                            if (raw()@annotation=='pd.hg.u133a') {
+                              Annot <- data.frame(ACCNUM=sapply(contents(hgu133aACCNUM), paste, collapse=", "), SYMBOL=sapply(contents(hgu133aSYMBOL), paste, collapse=", "), DESC=sapply(contents(hgu133aGENENAME), paste, collapse=", "))
+                            } else {
+                              if (raw()@annotation=='pd.hugene.1.0.st.v1') {
+                                Annot <- data.frame(ACCNUM=sapply(contents(hugene10sttranscriptclusterACCNUM), paste, collapse=", "), SYMBOL=sapply(contents(hugene10sttranscriptclusterSYMBOL), paste, collapse=", "), DESC=sapply(contents(hugene10sttranscriptclusterGENENAME), paste, collapse=", "))
+                              } else {
+                                if (raw()@annotation=='pd.mogene.1.0.st.v1') {
+                                  Annot <- data.frame(ACCNUM=sapply(contents(mogene10sttranscriptclusterACCNUM), paste, collapse=", "), SYMBOL=sapply(contents(mogene10sttranscriptclusterSYMBOL), paste, collapse=", "), DESC=sapply(contents(mogene10sttranscriptclusterGENENAME), paste, collapse=", "))
+                                } else {
+                                  if (raw()@annotation=='pd.hg.u133a.2') {
+                                    Annot <- data.frame(ACCNUM=sapply(contents(hgu133a2ACCNUM), paste, collapse=", "), SYMBOL=sapply(contents(hgu133a2SYMBOL), paste, collapse=", "), DESC=sapply(contents(hgu133a2GENENAME), paste, collapse=", "))
+                                  } else {
+                                    if (raw()@annotation=='pd.huex.1.0.st.v2') {
+                                      Annot <- data.frame(ACCNUM=sapply(contents(huex10sttranscriptclusterACCNUM), paste, collapse=", "), SYMBOL=sapply(contents(huex10sttranscriptclusterSYMBOL), paste, collapse=", "), DESC=sapply(contents(huex10sttranscriptclusterGENENAME), paste, collapse=", "))
+                                    } else {
+                                      if (raw()@annotation=='pd.hg.u219') {
+                                        Annot <- data.frame(ACCNUM=sapply(contents(hgu219ACCNUM), paste, collapse=", "), SYMBOL=sapply(contents(hgu219SYMBOL), paste, collapse=", "), DESC=sapply(contents(hgu219GENENAME), paste, collapse=", "))
+                                      } else {
+                                        if (raw()@annotation=='pd.ht.hg.u133.plus.pm') {
+                                          Annot <- data.frame(ACCNUM=sapply(contents(hgu133plus2ACCNUM), paste, collapse=", "), SYMBOL=sapply(contents(hgu133plus2SYMBOL), paste, collapse=", "), DESC=sapply(contents(hgu133plus2GENENAME), paste, collapse=", "))
+                                        } else {
+                                          if (raw()@annotation=='pd.mg.u74av2') {
+                                            Annot <- data.frame(ACCNUM=sapply(contents(mgu74av2ACCNUM), paste, collapse=", "), SYMBOL=sapply(contents(mgu74av2SYMBOL), paste, collapse=", "), DESC=sapply(contents(mgu74av2GENENAME), paste, collapse=", "))
+                                          } else {
+                                            if (raw()@annotation=='pd.mouse430a.2') {
+                                              Annot <- data.frame(ACCNUM=sapply(contents(mouse430a2ACCNUM), paste, collapse=", "), SYMBOL=sapply(contents(mouse430a2SYMBOL), paste, collapse=", "), DESC=sapply(contents(mouse430a2GENENAME), paste, collapse=", "))
+                                            } else {
+                                              if (raw()@annotation=='pd.moe430a') {
+                                                Annot <- data.frame(ACCNUM=sapply(contents(moe430aACCNUM), paste, collapse=", "), SYMBOL=sapply(contents(moe430aSYMBOL), paste, collapse=", "), DESC=sapply(contents(moe430aGENENAME), paste, collapse=", "))
+                                              } else {
+                                                if (raw()@annotation=='pd.hg.u95av2') {
+                                                  Annot <- data.frame(ACCNUM=sapply(contents(hgu95av2ACCNUM), paste, collapse=", "), SYMBOL=sapply(contents(hgu95av2SYMBOL), paste, collapse=", "), DESC=sapply(contents(hgu95av2GENENAME), paste, collapse=", "))
+                                                } else {
+                                                  if (raw()@annotation=='pd.hta.2.0') {
+                                                    Annot <- data.frame(ACCNUM=sapply(contents(hta20transcriptclusterACCNUM), paste, collapse=", "), SYMBOL=sapply(contents(hta20transcriptclusterSYMBOL), paste, collapse=", "), DESC=sapply(contents(hta20transcriptclusterGENENAME), paste, collapse=", "))
+                                                  } else {
+                                                    if (raw()@annotation=='pd.moex.1.0.st.v1') {
+                                                      Annot <- data.frame(ACCNUM=sapply(contents(moex10sttranscriptclusterACCNUM), paste, collapse=", "), SYMBOL=sapply(contents(moex10sttranscriptclusterSYMBOL), paste, collapse=", "), DESC=sapply(contents(moex10sttranscriptclusterGENENAME), paste, collapse=", "))
+                                                    } else {
+                                                      if (raw()@annotation=='pd.hg.u133b') {
+                                                        Annot <- data.frame(ACCNUM=sapply(contents(hgu133bACCNUM), paste, collapse=", "), SYMBOL=sapply(contents(hgu133bSYMBOL), paste, collapse=", "), DESC=sapply(contents(hgu133bGENENAME), paste, collapse=", "))
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            
+            incProgress(0.25, detail = 'preparing for pathway analysis ...')
+            mylist=vector("list",nb)
+            
+            for (i in 1:nb)
+            {
+              
+              all.genes.con = topTable(ebayes.fit2, coef = i, number=nrow(ebayes.fit2))
+              
+              # Merge data frames together (like a database table join)
+              
+              all <- merge(all.genes.con, Annot,by.x=0, by.y=0, all.x=T)
+              all=all[order(all$P.Value),]
+              colnames(all)[1]="probsetID"
+              
+              #add fold change and rearrange columns
+              all$FC = ifelse(all$logFC<0, -1/(2^all$logFC), 2^all$logFC)
+              all = all[,c(9,1,8,10,11,2,5,6,3,4,7)]
+              
+              # Write out to a file:
+              write.table(all,file=paste(input$ProjectID,"_",cons[i],"_all_genes.txt",sep=""),sep="\t",row.names=F)
+              # cat("Contrast: ",i," done \n")
+              
+              mylist[[i]]=all
+              ## end for
+            }
+            all <- merge(exprs(norm()), Annot,by.x=0, by.y=0, all.x=T)
+            write.table(all,file=paste(input$ProjectID,"_normalized_data.txt",sep=""),sep="\t",row.names=F)
+            #  
+            names(mylist)=cons
+            
+            incProgress(0.5, detail = 'DEG done')
+            
+            #mylist
+            list(mylist=mylist)
+          })
+          ##-------------
+        }
+      )
+      
+  #Processing all outputs
+  
+  ####creates a list of colors specific to each group
+  fs = factor(pData(raw())$group)
+  #fs = factor(pData(raw())$SampleGroup)
+  lFs=levels(fs)
+  numFs=length(lFs)
+  colors = list()
+  for (i in 1:numFs){
+    colors[which(fs==lFs[i])] = i*5
+  }
+  colors = unlist(colors)
+  ####end
+  
+  output$projectid=renderText({paste("Project ID: ",input$ProjectID)})
+  output$rawhist=renderPlot(
+    {
+      hist(raw(),which="all", main =" Raw Samples distribution")
+    }
+  )
+  
+  ###Beginning raw maplot###
+  output$rawmaplot=renderUI({
+    #facs <- pData(raw())$SampleID
+    facs <- pData(raw())$SampleID
+    nbfacs=length(facs)
+    plot_output_list <- lapply(1:nbfacs, function(i) {
+      plotname <- paste("plot", i, sep="")
+      plotOutput(plotname, height = 400, width = 600)
+    })
+    # Convert the list to a tagList - this is necessary for the list of items
+    # to display properly.
+    do.call(tagList, plot_output_list)
   })
   
-  norm=reactive(
-    {
-      withProgress(message = 'Normalization', detail = 'starting ...', value = 0, {
-        if (raw()@annotation=="pd.hg.u133.plus.2" | raw()@annotation=="pd.clariom.s.human.ht" | raw()@annotation=="pd.clariom.s.human" | raw()@annotation=="pd.clariom.s.mouse.ht" | raw()@annotation=="pd.clariom.s.mouse" | raw()@annotation=='pd.mouse430.2' | raw()@annotation=='pd.hg.u133a' | raw()@annotation=='pd.hg.u133a.2' | raw()@annotation=='pd.hg.u219' | raw()@annotation=='pd.mg.u74av2' | raw()@annotation=='pd.mouse430a.2' | raw()@annotation=='pd.moe430a' | raw()@annotation=='pd.hg.u95av2' | raw()@annotation=='pd.hg.u133b') {
-          incProgress(0.5)
-          celfiles.rma =rma(raw(), background=TRUE, normalize=TRUE, subset=NULL)
-        } else {
-          incProgress(0.5)
-          celfiles.rma =rma(raw(), background=TRUE, normalize=TRUE, subset=NULL, target="core")
-        }
+  facs <- pData(raw())$SampleID
+  nbfacs=length(facs)
+
+  for (i in 1:nbfacs) {
+    local({
+      my_i <- i
+      plotname <- paste("plot", my_i, sep="")
+      output[[plotname]] <- renderPlot({
+        withProgress(message = 'Generating Raw Maplot', detail = paste0('Plot ', my_i, ' ...'), value = (my_i/nbfacs), {
+          MAplot(raw(),which=my_i,plotFun=smoothScatter,refSamples=c(1:nbfacs), main='', cex=2)
+        })
       })
     })
-  qc=reactive(
+  }
+  ###end raw maplot###
+  
+  output$rawbox=renderPlot(
     {
-      withProgress(message = 'Fitting probe level model', detail = 'starting ...', value = 0.75, {
-        validate(
-          need(raw()@annotation!= "pd.mogene.1.0.st.v1", 'NUSE and RLE plots unavailable for this platform.')
-        )
-        celfiles.qc=fitProbeLevelModel(raw())
+      boxplot(raw(), col=colors, which="all", main="Boxplots before normalization",las=2,names=pData(raw())$SampleID)
+    }
+  )
+  output$rle=renderPlot(
+    {
+      RLE(qc(), main="RLE plot",names=pData(raw())$SampleID, col=colors)
+    }
+  )
+  output$nuse=renderPlot(
+    {
+      NUSE(qc(), main="NUSE plot",names=pData(raw())$SampleID, col=colors)
+    }
+  )
+  output$rmahist=renderPlot(
+    {
+      hist(norm(), main ="Distribution after Normalization")
+    }
+  )
+  
+  ## MVAplot after normalization
+  output$normaplot=renderUI({
+    facs2 <- pData(norm())$SampleID
+    nbfacs2=length(facs2)
+    plot_output_list2 <- lapply(1:nbfacs2, function(i) {
+      plotname2 <- paste("plota", i, sep="")
+      plotOutput(plotname2, height = 400, width = 600)
+    })
+    # Convert the list to a tagList - this is necessary for the list of items
+    # to display properly.
+    do.call(tagList, plot_output_list2)
+  })
+  
+  facs2 <- pData(norm())$SampleID
+  nbfacs2=length(facs2)
+  
+  for (i in 1:nbfacs2) {
+    local({
+      my_i <- i
+      plotname2 <- paste("plota", my_i, sep="")
+      # MA plots are then used to visualize intensity-dependent ratio for each group
+      output[[plotname2]] <- renderPlot({
+        withProgress(message = 'Generating Normalized Maplot', detail = paste0('Plot ', my_i, ' ...'), value = my_i/nbfacs2, {
+          MAplot(norm(),which=my_i,plotFun=smoothScatter,refSamples=c(1:nbfacs2),main='', cex=2)
+        })
+      })
+    })
+  }
+  output$rmabox=renderPlot(
+    {
+      boxplot(norm(),col=colors, main="Boxplots after RMA normalization",las=2,names=pData(norm())$SampleID)
+    }
+  )
+  ## end mvaplat after normalization
+  
+  ## pca 3D
+  output$pca3d=renderRglwidget(
+    {
+      withProgress(message = 'Generating PCA', detail = 'starting ...', value = 0.5, {
+        tedf= t(exprs(norm()))
+        
+        #removes zero  variances (issue with small sample sizes)
+        if (length(which(apply(tedf, 2, var)==0)) >= 0){
+          tedf = tedf[ , apply(tedf, 2, var) != 0]
+        }
+        
+        pca=prcomp(tedf, scale. = T)
+        incProgress(amount = 0.25, detail = 'determining variance ...')
+        rgl.open(useNULL=T)
+        bg3d('white')
+        plot3d(pca$x[,1:3],col=colors, type='s',size=2)
+        group.v=as.vector(pData(norm())$SampleID)
+        text3d(pca$x, pca$y, pca$z, group.v, cex=0.6, adj=2)
+        par3d(mouseMode = "trackball")
+        rglwidget()
       })
     }
   )
+  output$heatmap=renderPlotly(
+    {
+      mat=as.matrix(dist(t(exprs(norm()))))
+      rownames(mat)=pData(norm())$SampleID
+      colnames(mat)=rownames(mat)
+      heatmaply(mat,margins = c(80,120,60,40),colorRampPalette(colors = c("red", "yellow")))
+    }
+  )
+  output$deg=DT::renderDataTable(DT::datatable(
+    {
+      dat = deg()$mylist[[input$NumContrasts]]
+      dat = dat[,-6]
+      dat[,6:7] = format(dat[,6:7], scientific = TRUE)
+      
+      if (is.na(input$pval) & is.na(input$fc)) {   
+        dat
+      } else if (is.na(input$pval))  {
+        dat = dat[(abs(as.numeric(dat[,5])) >= input$fc),]
+      } else if (is.na(input$fc)) {
+        dat = dat[(as.numeric(dat[,6]) <= input$pval),]
+      } else {
+        dat = dat[(as.numeric(dat[,6]) <= input$pval & abs(as.numeric(dat[,5])) >= input$fc),]
+        dat
+      }
+      # deg()[[1]]
+    }, caption =paste0("contrast: ",names(deg()$mylist)[input$NumContrasts])
+  )
+  )
+  })
+})
 })
 
 
