@@ -73,6 +73,7 @@ setwd('/Users/valdezkm/Documents/MicroarrayPipeline_VERSION2/MicroarrayShinyApp'
 shinyServer(function(input, output) {
   
   v <- reactiveValues(data = NULL, platform=NULL)
+  k <- reactiveValues()
   
   observeEvent(
     input$button, 
@@ -96,7 +97,7 @@ shinyServer(function(input, output) {
   )
   
   observeEvent(
-    input$test,
+    input$addrow,
     isolate({
       shinyjs:: show("hideAnalysis")
     })
@@ -106,6 +107,13 @@ shinyServer(function(input, output) {
     input$analyze,
     isolate({
       shinyjs:: show("hideResults")
+    })
+  )
+  
+  observeEvent(
+    input$test,
+    isolate({
+      shinyjs:: show("hideContrast")
     })
   )
   
@@ -159,6 +167,7 @@ shinyServer(function(input, output) {
       #print( "Error??2")
 
       v$data[input$mytable_rows_selected, "group" ] <- input$group1
+      
       #print( "Error??3")
       
       output$mytable = DT::renderDataTable({
@@ -177,285 +186,108 @@ shinyServer(function(input, output) {
 
                    switch(input$number,
                           "1" = selectInput("group1", "Please select a group",
-                                            choices = c("Group 1" = "Group 1"),
-                                            selected = "Group 1"
+                                            choices = c("Group_1" = "Group_1"),
+                                            selected = "Group_1"
                           ),
                           "2" = selectInput("group1", "Please select a group",
-                                            choices = c("Group 1" = "Group 1",
-                                                        "Group 2" = "Group 2"),
-                                            selected = "Group 1"
+                                            choices = c("Group_1" = "Group_1",
+                                                        "Group_2" = "Group_2"),
+                                            selected = "Group_1"
                           ),
                           "3" = selectInput("group1", "Please select a group",
-                                            choices = c("Group 1" = "Group 1",
-                                                        "Group 2" = "Group 2",
-                                                        "Group 3" = "Group 3"),
-                                            selected = "Group 1"
+                                            choices = c("Group_1" = "Group_1",
+                                                        "Group_2" = "Group_2",
+                                                        "Group_3" = "Group_3"),
+                                            selected = "Group_1"
                           ),
                           "4" = selectInput("group1", "Please select a group",
-                                            choices = c("Group 1" = "Group 1",
-                                                        "Group 2" = "Group 2",
-                                                        "Group 3" = "Group 3",
-                                                        "Group 4" = "Group 4"),
-                                            selected = "Group 1"
+                                            choices = c("Group_1" = "Group_1",
+                                                        "Group_2" = "Group_2",
+                                                        "Group_3" = "Group_3",
+                                                        "Group_4" = "Group_4"),
+                                            selected = "Group_1"
                           ),
                           "5" = selectInput("group1", "Please select a group",
-                                            choices = c("Group 1" = "Group 1",
-                                                        "Group 2" = "Group 2",
-                                                        "Group 3" = "Group 3",
-                                                        "Group 4" = "Group 4",
-                                                        "Group 5" = "Group 5"),
-                                            selected = "Group 1"
+                                            choices = c("Group_1" = "Group_1",
+                                                        "Group_2" = "Group_2",
+                                                        "Group_3" = "Group_3",
+                                                        "Group_4" = "Group_4",
+                                                        "Group_5" = "Group_5"),
+                                            selected = "Group_1"
                           ),
                           "6" = selectInput("group1", "Please select a group",
-                                            choices = c("Group 1" = "Group 1",
-                                                        "Group 2" = "Group 2",
-                                                        "Group 3" = "Group 3",
-                                                        "Group 4" = "Group 4",
-                                                        "Group 5" = "Group 5",
-                                                        "Group 6" = "Group 6"),
-                                            selected = "Group 1"
+                                            choices = c("Group_1" = "Group_1",
+                                                        "Group_2" = "Group_2",
+                                                        "Group_3" = "Group_3",
+                                                        "Group_4" = "Group_4",
+                                                        "Group_5" = "Group_5",
+                                                        "Group_6" = "Group_6"),
+                                            selected = "Group_1"
                           ),
                           "7" = selectInput("group1", "Please select a group",
-                                            choices = c("Group 1" = "Group 1",
-                                                        "Group 2" = "Group 2",
-                                                        "Group 3" = "Group 3",
-                                                        "Group 4" = "Group 4",
-                                                        "Group 5" = "Group 5",
-                                                        "Group 6" = "Group 6",
-                                                        "Group 7" = "Group 7"),
-                                            selected = "Group 1"
+                                            choices = c("Group_1" = "Group_1",
+                                                        "Group_2" = "Group_2",
+                                                        "Group_3" = "Group_3",
+                                                        "Group_4" = "Group_4",
+                                                        "Group_5" = "Group_5",
+                                                        "Group_6" = "Group_6",
+                                                        "Group_7" = "Group_7"),
+                                            selected = "Group_1"
                           ),
                           "8" = selectInput("group1", "Please select a group",
-                                            choices = c("Group 1" = "Group 1",
-                                                        "Group 2" = "Group 2",
-                                                        "Group 3" = "Group 3",
-                                                        "Group 4" = "Group 4",
-                                                        "Group 5" = "Group 5",
-                                                        "Group 6" = "Group 6",
-                                                        "Group 7" = "Group 7",
-                                                        "Group 8" = "Group 8"),
-                                            selected = "Group 1"
+                                            choices = c("Group_1" = "Group_1",
+                                                        "Group_2" = "Group_2",
+                                                        "Group_3" = "Group_3",
+                                                        "Group_4" = "Group_4",
+                                                        "Group_5" = "Group_5",
+                                                        "Group_6" = "Group_6",
+                                                        "Group_7" = "Group_7",
+                                                        "Group_8" = "Group_8"),
+                                            selected = "Group_1"
                           ),
                           "9" = selectInput("group1", "Please select a group",
-                                            choices = c("Group 1" = "Group 1",
-                                                        "Group 2" = "Group 2",
-                                                        "Group 3" = "Group 3",
-                                                        "Group 4" = "Group 4",
-                                                        "Group 5" = "Group 5",
-                                                        "Group 6" = "Group 6",
-                                                        "Group 7" = "Group 7",
-                                                        "Group 8" = "Group 8",
-                                                        "Group 9" = "Group 9"),
-                                            selected = "Group 1"
+                                            choices = c("Group_1" = "Group_1",
+                                                        "Group_2" = "Group_2",
+                                                        "Group_3" = "Group_3",
+                                                        "Group_4" = "Group_4",
+                                                        "Group_5" = "Group_5",
+                                                        "Group_6" = "Group_6",
+                                                        "Group_7" = "Group_7",
+                                                        "Group_8" = "Group_8",
+                                                        "Group_9" = "Group_9"),
+                                            selected = "Group_1"
                           ),
                           "10" = selectInput("group1", "Please select a group",
-                                            choices = c("Group 1" = "Group 1",
-                                                        "Group 2" = "Group 2",
-                                                        "Group 3" = "Group 3",
-                                                        "Group 4" = "Group 4",
-                                                        "Group 5" = "Group 5",
-                                                        "Group 6" = "Group 6",
-                                                        "Group 7" = "Group 7",
-                                                        "Group 8" = "Group 8",
-                                                        "Group 9" = "Group 9",
-                                                        "Group 10" = "Group 10"),
-                                            selected = "Group 1"
+                                            choices = c("Group_1" = "Group_1",
+                                                        "Group_2" = "Group_2",
+                                                        "Group_3" = "Group_3",
+                                                        "Group_4" = "Group_4",
+                                                        "Group_5" = "Group_5",
+                                                        "Group_6" = "Group_6",
+                                                        "Group_7" = "Group_7",
+                                                        "Group_8" = "Group_8",
+                                                        "Group_9" = "Group_9",
+                                                        "Group_10" = "Group_10"),
+                                            selected = "Group_1"
                           )
                    )
                  })
                })
          })
 
-  observe({
-    if (input$test == 0)
-      return()
+  observeEvent(input$addrow,{
     isolate({
-      output$value <-renderTable({
-        side1 <- paste0(switch(input$number,
-                               "1" = selectInput("group1", NULL,
-                                                 choices = c("Group 1" = "Group 1"),
-                                                 selected = "Group 1"
-                               ),
-                               "2" = selectInput("group1", NULL,
-                                                 choices = c("Group 1" = "Group 1",
-                                                             "Group 2" = "Group 2"),
-                                                 selected = "Group 1"
-                               ),
-                               "3" = selectInput("group1", NULL,
-                                                 choices = c("Group 1" = "Group 1",
-                                                             "Group 2" = "Group 2",
-                                                             "Group 3" = "Group 3"),
-                                                 selected = "Group 1"
-                               ),
-                               "4" = selectInput("group1", NULL,
-                                                 choices = c("Group 1" = "Group 1",
-                                                             "Group 2" = "Group 2",
-                                                             "Group 3" = "Group 3",
-                                                             "Group 4" = "Group 4"),
-                                                 selected = "Group 1"
-                               ),
-                               "5" = selectInput("group1", NULL,
-                                                 choices = c("Group 1" = "Group 1",
-                                                             "Group 2" = "Group 2",
-                                                             "Group 3" = "Group 3",
-                                                             "Group 4" = "Group 4",
-                                                             "Group 5" = "Group 5"),
-                                                 selected = "Group 1"
-                               ),
-                               "6" = selectInput("group1", NULL,
-                                                 choices = c("Group 1" = "Group 1",
-                                                             "Group 2" = "Group 2",
-                                                             "Group 3" = "Group 3",
-                                                             "Group 4" = "Group 4",
-                                                             "Group 5" = "Group 5",
-                                                             "Group 6" = "Group 6"),
-                                                 selected = "Group 1"
-                               ),
-                               "7" = selectInput("group1", NULL,
-                                                 choices = c("Group 1" = "Group 1",
-                                                             "Group 2" = "Group 2",
-                                                             "Group 3" = "Group 3",
-                                                             "Group 4" = "Group 4",
-                                                             "Group 5" = "Group 5",
-                                                             "Group 6" = "Group 6",
-                                                             "Group 7" = "Group 7"),
-                                                 selected = "Group 1"
-                               ),
-                               "8" = selectInput("group1", NULL,
-                                                 choices = c("Group 1" = "Group 1",
-                                                             "Group 2" = "Group 2",
-                                                             "Group 3" = "Group 3",
-                                                             "Group 4" = "Group 4",
-                                                             "Group 5" = "Group 5",
-                                                             "Group 6" = "Group 6",
-                                                             "Group 7" = "Group 7",
-                                                             "Group 8" = "Group 8"),
-                                                 selected = "Group 1"
-                               ),
-                               "9" = selectInput("group1", NULL,
-                                                 choices = c("Group 1" = "Group 1",
-                                                             "Group 2" = "Group 2",
-                                                             "Group 3" = "Group 3",
-                                                             "Group 4" = "Group 4",
-                                                             "Group 5" = "Group 5",
-                                                             "Group 6" = "Group 6",
-                                                             "Group 7" = "Group 7",
-                                                             "Group 8" = "Group 8",
-                                                             "Group 9" = "Group 9"),
-                                                 selected = "Group 1"
-                               ),
-                               "10" = selectInput("group1", NULL,
-                                                  choices = c("Group 1" = "Group 1",
-                                                              "Group 2" = "Group 2",
-                                                              "Group 3" = "Group 3",
-                                                              "Group 4" = "Group 4",
-                                                              "Group 5" = "Group 5",
-                                                              "Group 6" = "Group 6",
-                                                              "Group 7" = "Group 7",
-                                                              "Group 8" = "Group 8",
-                                                              "Group 9" = "Group 9",
-                                                              "Group 10" = "Group 10"),
-                                                  selected = "Group 1"
-                               
-        )
-                               
-        ), TRUE:input$test)
-        vs.side2 <- paste0(switch(input$number,
-                                  "1" = selectInput("group1", NULL,
-                                                    choices = c("Group 1" = "Group 1"),
-                                                    selected = "Group 1"
-                                  ),
-                                  "2" = selectInput("group1", NULL,
-                                                    choices = c("Group 1" = "Group 1",
-                                                                "Group 2" = "Group 2"),
-                                                    selected = "Group 1"
-                                  ),
-                                  "3" = selectInput("group1", NULL,
-                                                    choices = c("Group 1" = "Group 1",
-                                                                "Group 2" = "Group 2",
-                                                                "Group 3" = "Group 3"),
-                                                    selected = "Group 1"
-                                  ),
-                                  "4" = selectInput("group1", NULL,
-                                                    choices = c("Group 1" = "Group 1",
-                                                                "Group 2" = "Group 2",
-                                                                "Group 3" = "Group 3",
-                                                                "Group 4" = "Group 4"),
-                                                    selected = "Group 1"
-                                  ),
-                                  "5" = selectInput("group1", NULL,
-                                                    choices = c("Group 1" = "Group 1",
-                                                                "Group 2" = "Group 2",
-                                                                "Group 3" = "Group 3",
-                                                                "Group 4" = "Group 4",
-                                                                "Group 5" = "Group 5"),
-                                                    selected = "Group 1"
-                                  ),
-                                  "6" = selectInput("group1", NULL,
-                                                    choices = c("Group 1" = "Group 1",
-                                                                "Group 2" = "Group 2",
-                                                                "Group 3" = "Group 3",
-                                                                "Group 4" = "Group 4",
-                                                                "Group 5" = "Group 5",
-                                                                "Group 6" = "Group 6"),
-                                                    selected = "Group 1"
-                                  ),
-                                  "7" = selectInput("group1", NULL,
-                                                    choices = c("Group 1" = "Group 1",
-                                                                "Group 2" = "Group 2",
-                                                                "Group 3" = "Group 3",
-                                                                "Group 4" = "Group 4",
-                                                                "Group 5" = "Group 5",
-                                                                "Group 6" = "Group 6",
-                                                                "Group 7" = "Group 7"),
-                                                    selected = "Group 1"
-                                  ),
-                                  "8" = selectInput("group1", NULL,
-                                                    choices = c("Group 1" = "Group 1",
-                                                                "Group 2" = "Group 2",
-                                                                "Group 3" = "Group 3",
-                                                                "Group 4" = "Group 4",
-                                                                "Group 5" = "Group 5",
-                                                                "Group 6" = "Group 6",
-                                                                "Group 7" = "Group 7",
-                                                                "Group 8" = "Group 8"),
-                                                    selected = "Group 1"
-                                  ),
-                                  "9" = selectInput("group1", NULL,
-                                                    choices = c("Group 1" = "Group 1",
-                                                                "Group 2" = "Group 2",
-                                                                "Group 3" = "Group 3",
-                                                                "Group 4" = "Group 4",
-                                                                "Group 5" = "Group 5",
-                                                                "Group 6" = "Group 6",
-                                                                "Group 7" = "Group 7",
-                                                                "Group 8" = "Group 8",
-                                                                "Group 9" = "Group 9"),
-                                                    selected = "Group 1"
-                                  ),
-                                  "10" = selectInput("group1", NULL,
-                                                     choices = c("Group 1" = "Group 1",
-                                                                 "Group 2" = "Group 2",
-                                                                 "Group 3" = "Group 3",
-                                                                 "Group 4" = "Group 4",
-                                                                 "Group 5" = "Group 5",
-                                                                 "Group 6" = "Group 6",
-                                                                 "Group 7" = "Group 7",
-                                                                 "Group 8" = "Group 8",
-                                                                 "Group 9" = "Group 9",
-                                                                 "Group 10" = "Group 10"),
-                                                     selected = "Group 1"
-        )
-        
-        ), 
-        TRUE:input$test)
-        data.frame(side1, vs.side2)
-  
-
-        
-      }, sanitize.text.function = function(x) x)
+      newLine1 = c(input$selectIn1)
+      newLine2 = c(input$selectIn2)
+      
+      k$k1 <- rbind(k$k1, newLine1)
+      k$k2 <- rbind(k$k2, newLine2)             
+      })
     })
-  })
+  output$contrastTable <- renderTable({
+    data.frame(paste0(k$k1,'  vs  ', k$k2))
+  }, colnames = FALSE)
+  
   observeEvent(
     input$analyze, {
       isolate({
@@ -474,7 +306,7 @@ shinyServer(function(input, output) {
  
       #cels = paste0(Pheno$gsm,'_',Pheno$title,'.CEL.gz')   #adds filename
       Pheno = v$data
-      system(paste0('ls ',getwd(),'/*.gz > SampleName.txt'))    #list contents of new directory with zipped CEL files
+      system(paste0('ls ',getwd(),'/*CEL.gz > SampleName.txt'))    #list contents of new directory with zipped CEL files
       SampleName = read.delim('SampleName.txt', sep='\n', header = F)
       SampleName = basename(as.character(unlist(SampleName)))
       rownames(Pheno) = SampleName
@@ -529,12 +361,11 @@ shinyServer(function(input, output) {
         {
           ##-------------
           withProgress(message = 'Computing differentially expressed genes', value = 0, {
-            facs <- factor(pData(raw())$SampleGroup)
+            facs <- factor(pData(raw())$group)
             labfacs=levels(facs)
             nbfacs=length(labfacs)
-            file1=input$const
 
-            contra=read.delim(file1$datapath)
+            contra=data.frame(k$k1,k$k2)
             nb=dim(contra)[1]
             cons=c()
             #validate(
@@ -555,7 +386,7 @@ shinyServer(function(input, output) {
             }
             
             
-            myfactor <- factor(pData(norm())$SampleGroup)
+            myfactor <- factor(pData(norm())$group)
             design1 <- model.matrix(~0+myfactor)
             colnames(design1) <- levels(myfactor)
             
@@ -708,6 +539,8 @@ shinyServer(function(input, output) {
           ##-------------
         }
       )
+      
+      
       
   #Processing all outputs
   

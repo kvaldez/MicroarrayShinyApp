@@ -93,8 +93,8 @@ shinyUI(
       #         #lapply(1:input$number, function(i) {     
       #         selectInput("group1", "Please select a group",
       #                     #choices = paste0('Group', i),
-      #                     choices = c("Group 1" = "Group 1"),
-      #                     selected = "Group 1"
+      #                     choices = c("Group_1" = "Group_1"),
+      #                     selected = "Group_1"
       #         #)}
       #       ),
       #       actionButton("button2", "Define")
@@ -108,8 +108,8 @@ shinyUI(
     #          #lapply(1:input$number, function(i) {     
     #          selectInput("group1", "Please select a group",
     #                      #choices = paste0('Group', i),
-    #                      choices = c("Group 1" = "Group 1", "Group 2" = "Group 2"),
-    #                      selected = "Group 1"
+    #                      choices = c("Group_1" = "Group_1", "Group_2" = "Group_2"),
+    #                      selected = "Group_1"
     #                      #)}
     #          ),
     #          actionButton("button2", "Define")
@@ -128,23 +128,65 @@ shinyUI(
           fluidRow(column(10, wellPanel(DT:: dataTableOutput("mytable"))))
         )),
     
-    shinyjs:: hidden(
-      div(id= "hide3",
-    mainPanel(
-      actionButton("test","Contrast")),
-    mainPanel(
-      uiOutput("value"))
-        )),
+    # shinyjs:: hidden(
+    #   div(id= "hide3",
+    #       mainPanel(
+    #         actionButton("test","Contrast"))
+    #   )),
+    
+   shinyjs:: hidden(
+     div(id= "hide3",
+          # conditionalPanel(
+          #   condition = "input.number == '1'",
+            mainPanel(
+              selectizeInput("selectIn1", "Select", 
+                             choices = c("Group_1" = "Group_1",
+                                         "Group_2" = "Group_2",
+                                         "Group_3" = "Group_3",
+                                         "Group_4" = "Group_4",
+                                         "Group_5" = "Group_5",
+                                         "Group_6" = "Group_6",
+                                         "Group_7" = "Group_7",
+                                         "Group_8" = "Group_8",
+                                         "Group_9" = "Group_9",
+                                         "Group_10" = "Group_10")),
+              selectizeInput("selectIn2", "Versus",
+                             choices = c("Group_1" = "Group_1",
+                                         "Group_2" = "Group_2",
+                                         "Group_3" = "Group_3",
+                                         "Group_4" = "Group_4",
+                                         "Group_5" = "Group_5",
+                                         "Group_6" = "Group_6",
+                                         "Group_7" = "Group_7",
+                                         "Group_8" = "Group_8",
+                                         "Group_9" = "Group_9",
+                                         "Group_10" = "Group_10"))),
+         mainPanel(
+             fluidRow(align='Top',
+                      column(2,
+                             actionButton("addrow","Add Contrast")
+                      )),
+              
+        mainPanel(
+            tableOutput("contrastTable"))
+     )),
     
     shinyjs::hidden(
       div(id='hideAnalysis',
-        mainPanel(
-          actionButton(inputId="analyze",label="Start")
-        )
-    )),
-    
-    shinyjs::hidden(
-    div(id='hideResults',
+        sidebarLayout(position = 'left',
+          sidebarPanel(
+            width=12,
+            fluidRow(align='Top',
+              column(3,
+                     numericInput("NumContrasts", label=h6("Choose contrast to show"),value="1", width="150px")),
+              column(3,
+                     numericInput("pval", label=h6("P-value threshold for DEGs"),value=0.05, width="200px")),
+              column(3,
+                     numericInput("fc", label=h6("FC threshold for DEGs"),value=1.5, width="150px")),
+              column(3, 
+                     numericInput("pathPval", label=h6("P-value threshold for pathways"),value=0.05, width="200px"))
+            ),
+            actionButton(inputId="analyze",label="Start")),
         mainPanel(
           navbarPage(title = "Results",
                      navbarMenu (title="Pre-normalization QC plots",
@@ -162,12 +204,17 @@ shinyUI(
                                 tabPanel("Interactive Heatmap",plotlyOutput("heatmap"))
                     ),
                     navbarMenu (title="DEG-Enrichments-tables",
-                                tabPanel("Differentially Expressed Genes",DT::dataTableOutput("deg"))
+                                tabPanel("Differentially Expressed Genes",DT::dataTableOutput("deg")),
+                                tabPanel("Pathways for Upregulated Genes",DT::dataTableOutput("topUp")),
+                                tabPanel("Pathways for Downregulated Genes",DT::dataTableOutput("topDown")),
+                                tabPanel("Interactive Volcano Plot",plotly::plotlyOutput('volcano'))
                     )
           )
         )
+        )
+      )
     )
-    )
+   )
   )
 )
  
