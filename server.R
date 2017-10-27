@@ -74,50 +74,50 @@ shinyServer(function(input, output) {
   
   v <- reactiveValues(data = NULL, platform=NULL)
   k <- reactiveValues()
-  
+
   observeEvent(
     input$button, 
     isolate({
       shinyjs::show("hide1")
     })
   )
-  
   observeEvent(
     input$button,
     isolate({
       shinyjs::show("hide2")
     })
   )
-  
   observeEvent(
     input$button2,
     isolate({
       shinyjs:: show("hide3")
     })
   )
-  
   observeEvent(
     input$addrow,
     isolate({
       shinyjs:: show("hideAnalysis")
     })
   )
-  
   observeEvent(
     input$analyze,
     isolate({
       shinyjs:: show("hideResults")
     })
   )
-  
   observeEvent(
     input$test,
     isolate({
       shinyjs:: show("hideContrast")
     })
   )
-  
-  
+  observeEvent(
+    input$analyze,
+    isolate({
+      shinyjs:: show("hideDownloads")
+    })
+  )
+ 
   observeEvent(
     input$button, 
     isolate({
@@ -138,13 +138,20 @@ shinyServer(function(input, output) {
         
         for (k in 1:length(GSMList(gds)))
         {
-          mytable[k,] <-c(Meta(GSMList(gds)[[k]])$geo_accession, Meta(GSMList(gds)[[k]])$title, Meta(GSMList(gds)[[k]])$description)
+          if (is.null(Meta(GSMList(gds)[[k]])$description)) {     #error handling, some records don't have descriptions
+            mytable[k,] <-c(Meta(GSMList(gds)[[k]])$geo_accession, Meta(GSMList(gds)[[k]])$title, 'No data available')
+          } else {
+            mytable[k,] <-c(Meta(GSMList(gds)[[k]])$geo_accession, Meta(GSMList(gds)[[k]])$title, Meta(GSMList(gds)[[k]])$description)
+          }
         }
         
         mytable <- data.frame(mytable)
         
         mytable$group <- ""
         v$data <- mytable
+        
+        #testing
+        write.csv(v$data, file = '/Users/valdezkm/Desktop/testTable.csv')
         
         incProgress(0.25)
         output$mytable = DT::renderDataTable({
@@ -166,7 +173,15 @@ shinyServer(function(input, output) {
       #print(v$data)
       #print( "Error??2")
 
-      v$data[input$mytable_rows_selected, "group" ] <- input$group1
+      #error handling names that conflict with DEG script
+      tempGroup = input$group1
+      if (toupper(tempGroup)==toupper('Control')){
+        withProgress(message='Changing name for compatibility with R...', value=1, {
+        tempGroup='Control1'
+        Sys.sleep(2)
+        })
+      }
+      v$data[input$mytable_rows_selected, "group" ] <- tempGroup
       
       #print( "Error??3")
       
@@ -178,102 +193,131 @@ shinyServer(function(input, output) {
       })
     })
   )
-  observeEvent(input$number, {
-               isolate({
-                 output$ui <- renderUI({
-                   if (is.null(input$number))
-                     return()
-
-                   switch(input$number,
-                          "1" = selectInput("group1", "Please select a group",
-                                            choices = c("Group_1" = "Group_1"),
-                                            selected = "Group_1"
-                          ),
-                          "2" = selectInput("group1", "Please select a group",
-                                            choices = c("Group_1" = "Group_1",
-                                                        "Group_2" = "Group_2"),
-                                            selected = "Group_1"
-                          ),
-                          "3" = selectInput("group1", "Please select a group",
-                                            choices = c("Group_1" = "Group_1",
-                                                        "Group_2" = "Group_2",
-                                                        "Group_3" = "Group_3"),
-                                            selected = "Group_1"
-                          ),
-                          "4" = selectInput("group1", "Please select a group",
-                                            choices = c("Group_1" = "Group_1",
-                                                        "Group_2" = "Group_2",
-                                                        "Group_3" = "Group_3",
-                                                        "Group_4" = "Group_4"),
-                                            selected = "Group_1"
-                          ),
-                          "5" = selectInput("group1", "Please select a group",
-                                            choices = c("Group_1" = "Group_1",
-                                                        "Group_2" = "Group_2",
-                                                        "Group_3" = "Group_3",
-                                                        "Group_4" = "Group_4",
-                                                        "Group_5" = "Group_5"),
-                                            selected = "Group_1"
-                          ),
-                          "6" = selectInput("group1", "Please select a group",
-                                            choices = c("Group_1" = "Group_1",
-                                                        "Group_2" = "Group_2",
-                                                        "Group_3" = "Group_3",
-                                                        "Group_4" = "Group_4",
-                                                        "Group_5" = "Group_5",
-                                                        "Group_6" = "Group_6"),
-                                            selected = "Group_1"
-                          ),
-                          "7" = selectInput("group1", "Please select a group",
-                                            choices = c("Group_1" = "Group_1",
-                                                        "Group_2" = "Group_2",
-                                                        "Group_3" = "Group_3",
-                                                        "Group_4" = "Group_4",
-                                                        "Group_5" = "Group_5",
-                                                        "Group_6" = "Group_6",
-                                                        "Group_7" = "Group_7"),
-                                            selected = "Group_1"
-                          ),
-                          "8" = selectInput("group1", "Please select a group",
-                                            choices = c("Group_1" = "Group_1",
-                                                        "Group_2" = "Group_2",
-                                                        "Group_3" = "Group_3",
-                                                        "Group_4" = "Group_4",
-                                                        "Group_5" = "Group_5",
-                                                        "Group_6" = "Group_6",
-                                                        "Group_7" = "Group_7",
-                                                        "Group_8" = "Group_8"),
-                                            selected = "Group_1"
-                          ),
-                          "9" = selectInput("group1", "Please select a group",
-                                            choices = c("Group_1" = "Group_1",
-                                                        "Group_2" = "Group_2",
-                                                        "Group_3" = "Group_3",
-                                                        "Group_4" = "Group_4",
-                                                        "Group_5" = "Group_5",
-                                                        "Group_6" = "Group_6",
-                                                        "Group_7" = "Group_7",
-                                                        "Group_8" = "Group_8",
-                                                        "Group_9" = "Group_9"),
-                                            selected = "Group_1"
-                          ),
-                          "10" = selectInput("group1", "Please select a group",
-                                            choices = c("Group_1" = "Group_1",
-                                                        "Group_2" = "Group_2",
-                                                        "Group_3" = "Group_3",
-                                                        "Group_4" = "Group_4",
-                                                        "Group_5" = "Group_5",
-                                                        "Group_6" = "Group_6",
-                                                        "Group_7" = "Group_7",
-                                                        "Group_8" = "Group_8",
-                                                        "Group_9" = "Group_9",
-                                                        "Group_10" = "Group_10"),
-                                            selected = "Group_1"
-                          )
-                   )
-                 })
-               })
-         })
+  
+  observe({
+    isolate({
+      output$ui <- renderUI({
+        # if (is.null(input$number))
+        #   return()
+            textInput("group1", "Please enter a group name (with no spaces)")
+      })
+    })
+  })
+  
+  observe({
+    isolate({
+      output$choice1 <- renderUI({
+        g = unique(v$data$group)
+        selectizeInput("selectIn1","Select",choices = g)
+      })
+    })
+  })
+  
+  observe({
+    isolate({
+      output$choice2 <- renderUI({
+        g = unique(v$data$group)
+        selectizeInput("selectIn2","Versus",choices = g)
+      })
+    })
+  })
+  
+  # observeEvent(input$number, {
+  #              isolate({
+  #                output$ui <- renderUI({
+  #                  if (is.null(input$number))
+  #                    return()
+  # 
+  #                  switch(input$number,
+  #                         "1" = selectInput("group1", "Please select a group",
+  #                                           choices = c("Group_1" = "Group_1"),
+  #                                           selected = "Group_1"
+  #                         ),
+  #                         "2" = selectInput("group1", "Please select a group",
+  #                                           choices = c("Group_1" = "Group_1",
+  #                                                       "Group_2" = "Group_2"),
+  #                                           selected = "Group_1"
+  #                         ),
+  #                         "3" = selectInput("group1", "Please select a group",
+  #                                           choices = c("Group_1" = "Group_1",
+  #                                                       "Group_2" = "Group_2",
+  #                                                       "Group_3" = "Group_3"),
+  #                                           selected = "Group_1"
+  #                         ),
+  #                         "4" = selectInput("group1", "Please select a group",
+  #                                           choices = c("Group_1" = "Group_1",
+  #                                                       "Group_2" = "Group_2",
+  #                                                       "Group_3" = "Group_3",
+  #                                                       "Group_4" = "Group_4"),
+  #                                           selected = "Group_1"
+  #                         ),
+  #                         "5" = selectInput("group1", "Please select a group",
+  #                                           choices = c("Group_1" = "Group_1",
+  #                                                       "Group_2" = "Group_2",
+  #                                                       "Group_3" = "Group_3",
+  #                                                       "Group_4" = "Group_4",
+  #                                                       "Group_5" = "Group_5"),
+  #                                           selected = "Group_1"
+  #                         ),
+  #                         "6" = selectInput("group1", "Please select a group",
+  #                                           choices = c("Group_1" = "Group_1",
+  #                                                       "Group_2" = "Group_2",
+  #                                                       "Group_3" = "Group_3",
+  #                                                       "Group_4" = "Group_4",
+  #                                                       "Group_5" = "Group_5",
+  #                                                       "Group_6" = "Group_6"),
+  #                                           selected = "Group_1"
+  #                         ),
+  #                         "7" = selectInput("group1", "Please select a group",
+  #                                           choices = c("Group_1" = "Group_1",
+  #                                                       "Group_2" = "Group_2",
+  #                                                       "Group_3" = "Group_3",
+  #                                                       "Group_4" = "Group_4",
+  #                                                       "Group_5" = "Group_5",
+  #                                                       "Group_6" = "Group_6",
+  #                                                       "Group_7" = "Group_7"),
+  #                                           selected = "Group_1"
+  #                         ),
+  #                         "8" = selectInput("group1", "Please select a group",
+  #                                           choices = c("Group_1" = "Group_1",
+  #                                                       "Group_2" = "Group_2",
+  #                                                       "Group_3" = "Group_3",
+  #                                                       "Group_4" = "Group_4",
+  #                                                       "Group_5" = "Group_5",
+  #                                                       "Group_6" = "Group_6",
+  #                                                       "Group_7" = "Group_7",
+  #                                                       "Group_8" = "Group_8"),
+  #                                           selected = "Group_1"
+  #                         ),
+  #                         "9" = selectInput("group1", "Please select a group",
+  #                                           choices = c("Group_1" = "Group_1",
+  #                                                       "Group_2" = "Group_2",
+  #                                                       "Group_3" = "Group_3",
+  #                                                       "Group_4" = "Group_4",
+  #                                                       "Group_5" = "Group_5",
+  #                                                       "Group_6" = "Group_6",
+  #                                                       "Group_7" = "Group_7",
+  #                                                       "Group_8" = "Group_8",
+  #                                                       "Group_9" = "Group_9"),
+  #                                           selected = "Group_1"
+  #                         ),
+  #                         "10" = selectInput("group1", "Please select a group",
+  #                                           choices = c("Group_1" = "Group_1",
+  #                                                       "Group_2" = "Group_2",
+  #                                                       "Group_3" = "Group_3",
+  #                                                       "Group_4" = "Group_4",
+  #                                                       "Group_5" = "Group_5",
+  #                                                       "Group_6" = "Group_6",
+  #                                                       "Group_7" = "Group_7",
+  #                                                       "Group_8" = "Group_8",
+  #                                                       "Group_9" = "Group_9",
+  #                                                       "Group_10" = "Group_10"),
+  #                                           selected = "Group_1"
+  #                         )
+  #                  )
+  #                })
+  #              })
+  #        })
 
   observeEvent(input$addrow,{
     isolate({
@@ -281,12 +325,22 @@ shinyServer(function(input, output) {
       newLine2 = c(input$selectIn2)
       
       k$k1 <- rbind(k$k1, newLine1)
-      k$k2 <- rbind(k$k2, newLine2)             
+      k$k2 <- rbind(k$k2, newLine2) 
       })
     })
   output$contrastTable <- renderTable({
     data.frame(paste0(k$k1,'  vs  ', k$k2))
   }, colnames = FALSE)
+  
+  observe({
+    isolate({
+      output$displayContrast <- renderUI({
+        selectizeInput("NumContrasts", label=h6("Choose contrast to show"),choices=paste0(k$k1, ' vs ', k$k2), width="150px")
+      })
+    })
+  })
+  
+  
   
   observeEvent(
     input$analyze, {
@@ -306,9 +360,7 @@ shinyServer(function(input, output) {
  
       #cels = paste0(Pheno$gsm,'_',Pheno$title,'.CEL.gz')   #adds filename
       Pheno = v$data
-      system(paste0('ls ',getwd(),'/*CEL.gz > SampleName.txt'))    #list contents of new directory with zipped CEL files
-      SampleName = read.delim('SampleName.txt', sep='\n', header = F)
-      SampleName = basename(as.character(unlist(SampleName)))
+      SampleName = list.files(pattern = '/*CEL.gz')    #list contents of new directory with zipped CEL files
       rownames(Pheno) = SampleName
       cels = SampleName
       
@@ -540,6 +592,74 @@ shinyServer(function(input, output) {
         }
       )
       
+      pathways=reactive(
+        {
+          #L2P pathway starts here KV
+          k$all = cbind(paste0(k$k1, ' vs ', k$k2))
+          num = which(input$NumContrasts==k$all[,1])
+          
+          all = deg()$mylist[[num]]
+          #up=vector("list",nb)
+          #dw=vector("list",nb)
+          
+          iup=which(all$P.Value<0.05 & all$logFC>=0)
+          idw=which(all$P.Value<0.05 & all$logFC<0)
+          fin.up=all[iup,]
+          
+          if (length(iup) > 500)
+          {
+            fin.up=fin.up[order(fin.up$P.Value),]
+            fin.up=fin.up[1:500,]
+          }
+          #x2=rownames(fin.up)
+          #gup=apply(array(as.character(x2)),1,function(z) unlist(strsplit(z, "\\|"))[2])
+          
+          fin.dw=all[idw,]
+          if (length(idw) > 500)
+          {
+            fin.dw=fin.dw[order(fin.dw$P.Value),]
+            fin.dw=fin.dw[1:500,]
+          }
+          
+          #running volcano plot prior to pathways inexplicably turns SYMBOL into a factor so:
+          fin.up$SYMBOL = as.character(fin.up$SYMBOL)
+          fin.dw$SYMBOL = as.character(fin.dw$SYMBOL)
+          
+          #x2=rownames(fin.dw)
+          #gdw=apply(array(as.character(x2)),1,function(z) unlist(strsplit(z, "\\|"))[2])
+          
+          if (raw()@annotation=="pd.hg.u133.plus.2" | raw()@annotation=="pd.hugene.2.0.st" | raw()@annotation=="pd.clariom.s.human.ht" | raw()@annotation=="pd.clariom.s.human" | raw()@annotation=='pd.hg.u133a' | raw()@annotation=='pd.hugene.1.0.st.v1' | raw()@annotation=='pd.hg.u133a.2' | raw()@annotation=='pd.huex.1.0.st.v2' | raw()@annotation=='pd.hg.u219' | raw()@annotation=='pd.ht.hg.u133.plus.pm' | raw()@annotation=='pd.hg.u95av2' | raw()@annotation=='pd.hta.2.0' | raw()@annotation=='pd.hg.u133b') 
+          {
+            cat(fin.up$SYMBOL,file=(paste0(input$ProjectID,'_',names(deg()$mylist[num]),'_Top500_Up.txt')), sep='\n')
+            cat(fin.dw$SYMBOL,file=(paste0(input$ProjectID,'_',names(deg()$mylist[num]),'_Top500_Down.txt')),sep='\n')
+          }
+          else
+          {
+            cat(fin.up$SYMBOL,file=paste0(names(deg()$mylist[num]),"_Top500temp_Up.txt"),sep='\n')
+            cat(fin.dw$SYMBOL,file=paste0(names(deg()$mylist[num]),"_Top500temp_Dw.txt"),sep='\n')
+            
+            system(paste0("cat ",names(deg()$mylist[num]),"_Top500temp_Up.txt | grep -v \"^NA\" | ./m2h | grep -v XXXX | cut -f2 -d\" \" >",input$ProjectID,'_',names(deg()$mylist[num]),"_Top500_Up.txt"))
+            system(paste0("cat ",names(deg()$mylist[num]),"_Top500temp_Dw.txt | grep -v \"^NA\" | ./m2h | grep -v XXXX | cut -f2 -d\" \" >",input$ProjectID,'_',names(deg()$mylist[num]),"_Top500_Down.txt"))
+          }
+          system(paste0("cat ",input$ProjectID,'_',names(deg()$mylist[num]),"_Top500_Up.txt |sort | uniq | ./l2p >",input$ProjectID,'_',names(deg()$mylist[num]),"_Pathways_Up.txt"))
+          system(paste0("cat ",input$ProjectID,'_',names(deg()$mylist[num]),"_Top500_Down.txt |sort | uniq | ./l2p >",input$ProjectID,'_',names(deg()$mylist[num]),"_Pathways_Down.txt"))
+          
+          addUpCol = read.delim(paste0(input$ProjectID,'_',names(deg()$mylist[num]),"_Pathways_Up.txt"), sep = '\t')
+          addDwCol = read.delim(paste0(input$ProjectID,'_',names(deg()$mylist[num]),"_Pathways_Down.txt"), sep = '\t')
+          
+          colnames(addUpCol)=c("pval","fdr","ratio","nb.hits","nb.genes.path","nb.user.genes","tot.back.genes","path_id","source","description","type","gene.list")
+          colnames(addDwCol)=c("pval","fdr","ratio","nb.hits","nb.genes.path","nb.user.genes","tot.back.genes","path_id","source","description","type","gene.list")
+          addUpCol = addUpCol[order(addUpCol$pval),]
+          addDwCol = addDwCol[order(addDwCol$pval),]
+          addUpCol = addUpCol[,c(8,9,10,11,1,2,3,12,4,5,6,7)]
+          addDwCol = addDwCol[,c(8,9,10,11,1,2,3,12,4,5,6,7)]
+          write.table(addUpCol, file = paste0(input$ProjectID,'_',names(deg()$mylist[num]),"_Pathways_Up.txt"), sep = '\t', row.names = F)
+          write.table(addDwCol, file = paste0(input$ProjectID,'_',names(deg()$mylist[num]),"_Pathways_Down.txt"), sep = '\t', row.names = F)
+          
+          list(up=addUpCol,dw=addDwCol)
+        } 
+      )
+      
       
       
   #Processing all outputs
@@ -682,7 +802,11 @@ shinyServer(function(input, output) {
   )
   output$deg=DT::renderDataTable(DT::datatable(
     {
-      dat = deg()$mylist[[input$NumContrasts]]
+      #turn NumContrasts back into a number
+      k$all = cbind(paste0(k$k1, ' vs ', k$k2))
+      num = which(input$NumContrasts==k$all[,1])
+   
+      dat = deg()$mylist[[num]]
       dat = dat[,-6]
       dat[,6:7] = format(dat[,6:7], scientific = TRUE)
       
@@ -697,8 +821,107 @@ shinyServer(function(input, output) {
         dat
       }
       # deg()[[1]]
-    }, caption =paste0("contrast: ",names(deg()$mylist)[input$NumContrasts])
+    }, caption =paste0("contrast: ",names(deg()$mylist)[num])
   )
+  )
+  output$topUp=DT::renderDataTable(DT::datatable(
+    {
+      k$all = cbind(paste0(k$k1, ' vs ', k$k2))
+      num = which(input$NumContrasts==k$all[,1])
+      
+      #deg()[[input$NumContrasts]]
+      #topUp = read.delim(paste0(input$ProjectID,'_',names(deg())[input$NumContrasts],"_Pathways_Up.txt"), sep = '\t', header = T)
+      #dev.off(which = plotly)
+      topUp = pathways()$up
+      
+      if(is.na(input$pathPval)) {
+        topUp
+      } else {
+        topUp = topUp[(as.numeric(topUp[,5]) <= input$pathPval),]
+      }
+      topUp
+    } , caption=paste0("Pathways for the top 500 Upregulated Genes: ", names(deg()$mylist)[num]),
+    options = list(columnDefs = list(list(targets = 8,
+                                          render = JS("function(data, type, row, meta) {",
+                                                      "return type === 'display' && data.length > 30 ?",
+                                                      "'<span title=\"' + data + '\">' + data.substr(0, 30) + '...</span>' : data;",
+                                                      "}")))), callback = JS('table.page(3).draw(false);')
+  )
+  )
+  output$topDown=DT::renderDataTable(DT::datatable(
+    {
+      #callDEG = deg()[[input$NumContrasts]]
+      #topDw = read.delim(paste0(input$ProjectID,'_',names(deg())[input$NumContrasts],"_Pathways_Down.txt"), sep = '\t', header = T)
+      
+      k$all = cbind(paste0(k$k1, ' vs ', k$k2))
+      num = which(input$NumContrasts==k$all[,1])
+      
+      topDw = pathways()$dw
+      
+      if (is.na(input$pathPval)) {
+        topDw
+      } else {
+        topDw = topDw[(as.numeric(topDw[,5]) <= input$pathPval),]
+      }
+      topDw
+      
+    } , caption=paste0("Pathways for the top 500 Downregulated Genes: ", names(deg()$mylist)[num]),
+    options = list(columnDefs = list(list(targets = 8, 
+                                          render = JS("function(data, type, row, meta) {",
+                                                      "return type === 'display' && data.length > 30 ?",
+                                                      "'<span title=\"' + data + '\">' + data.substr(0, 30) + '...</span>' : data;",
+                                                      "}")))), callback = JS('table.page(3).draw(false);')
+  )
+  )
+  output$volcano=renderPlotly(
+    {
+      withProgress(message = 'Generating Volcano Plot', detail = 'starting ...', value = 0, {
+        k$all = cbind(paste0(k$k1, ' vs ', k$k2))
+        num = which(input$NumContrasts==k$all[,1])
+        
+        dat=deg()$mylist[[num]]
+        #dat=deg()[[input$NumContrasts]]
+        
+        dat = dat[dat$SYMBOL!='NA',]
+        log_FC=dat$logFC
+        log_pval=-log10(dat$P.Value)
+        Significant=rep("NotSignificant",length(log_FC))
+        Significant[which(dat$P.Value<0.05 & abs(dat$logFC)>=1)]="Significant&LogFoldChange"
+        Significant[which(dat$P.Value<0.05 & abs(dat$logFC)<1)]="Significant"
+        Significant[which(dat$P.Value>=0.05 & abs(dat$logFC)>=1)]="LogFoldChange"
+        gene=dat$SYMBOL
+        volcano_data=as.data.frame(cbind(gene,log_FC,log_pval,Significant))
+        incProgress(0.50)
+        plot_ly(type='scatter', data = volcano_data, x = log_FC, y = log_pval, text = gene, mode = "markers", color = Significant) %>% layout(title=paste0('Volcano plot for: ',names(deg()$mylist)[num]),xaxis=list(title="Fold Change",range =c(-5,5),tickvals=c(-5,-4,-3,-2,-1,0,1,2,3,4,5),ticktext=c('-32','-16','-8','-4','-2','1','2','4','8','16','32')),yaxis=list(title="-Log10 pvalue",range =c(0,15)))
+      })
+    })
+  #observeEvent(input$rep, {
+    # withProgress(message = 'Generating HTML report', detail = 'starting ...', value = 0.5, {
+    #   # out <- render('../report_ver4.Rmd','html_document',paste(input$ProjectID,"_","report.html",sep=""),getwd(),getwd())
+    #   out <- rmarkdown::render('report_ver4.Rmd','html_document',paste(input$ProjectID,"_","report.html",sep=""))
+    # })
+  #})
+  output$projectid=renderText({paste("Project ID: ",input$ProjectID)})
+  output$downloadReport <- downloadHandler(
+    filename = function() {paste(input$ProjectID,"_Report.zip",sep="")},
+    content = function(file) {
+      withProgress(message = 'Generating HTML report', detail = 'starting ...', value = 0.5, {
+      out <- rmarkdown::render('report_ver4.Rmd','html_document',paste(input$ProjectID,"_","report.html",sep=""))
+      #mytables=list.files(pattern="\\.html$")
+      mytables=list.files(pattern=paste(input$ProjectID,".*.html",sep=""))
+      zip(file, mytables, flags = "-r9X", extras = "", zip = Sys.getenv("R_ZIPCMD", "zip"))
+      })
+    }
+    )
+  output$downloadTables <- downloadHandler(
+    filename = function() {paste(input$ProjectID,"_tables.zip",sep="")},
+    content = function(file) {
+      withProgress(message = 'Preparing download', detail = 'starting ...', value = 0.5, {
+      # mytables=list.files(pattern="\\.txt$")
+      mytables=list.files(pattern=paste(input$ProjectID,".*.txt",sep=""))
+      zip(file, mytables, flags = "-r9X", extras = "", zip = Sys.getenv("R_ZIPCMD", "zip"))
+      })
+    }
   )
   })
 })

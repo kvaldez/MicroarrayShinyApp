@@ -2,6 +2,8 @@ library(shiny)
 library(DT)
 library(Biobase)
 library(shinyjs)
+library(rglwidget)
+library(plotly)
 
 shinyUI(
   fluidPage(
@@ -60,25 +62,23 @@ shinyUI(
     br(),
     br(),
     
+    
+
 
     shinyjs::hidden(
       div(id= "hide1",
-          fluidRow(
-          column(3,
-                 selectInput("number", "Number of groups:",
-                             c("1"="1", "2"="2", "3"="3", "4"="4", "5"="5", "6"="6", "7"="7", "8"="8", "9"="9", "10"="10", ""),
-                             selected=""
-                 )
-                 #actionButton("button3", "Enter")
-          )),
+          # fluidRow(
+          #   column(3,
+          #          selectInput("number", "Number of groups:",
+          #                      c("1"="1", "2"="2", "3"="3", "4"="4", "5"="5", "6"="6", "7"="7", "8"="8", "9"="9", "10"="10", ""),
+          #                      selected=""
+          #          )
+          #          #actionButton("button3", "Enter")
+          #   )),
           column(3, 
-                 uiOutput("ui")
-          ),
-          br(), 
-          fluidRow(
-            column(3,
-          actionButton("button2", "Define")
-            )
+                 uiOutput("ui"),
+                 h5("Select samples below and click \"Define\""),
+                 actionButton("button2", "Define")
       ))
     ),
     br(),
@@ -136,40 +136,56 @@ shinyUI(
     
    shinyjs:: hidden(
      div(id= "hide3",
-          # conditionalPanel(
-          #   condition = "input.number == '1'",
-            mainPanel(
-              selectizeInput("selectIn1", "Select", 
-                             choices = c("Group_1" = "Group_1",
-                                         "Group_2" = "Group_2",
-                                         "Group_3" = "Group_3",
-                                         "Group_4" = "Group_4",
-                                         "Group_5" = "Group_5",
-                                         "Group_6" = "Group_6",
-                                         "Group_7" = "Group_7",
-                                         "Group_8" = "Group_8",
-                                         "Group_9" = "Group_9",
-                                         "Group_10" = "Group_10")),
-              selectizeInput("selectIn2", "Versus",
-                             choices = c("Group_1" = "Group_1",
-                                         "Group_2" = "Group_2",
-                                         "Group_3" = "Group_3",
-                                         "Group_4" = "Group_4",
-                                         "Group_5" = "Group_5",
-                                         "Group_6" = "Group_6",
-                                         "Group_7" = "Group_7",
-                                         "Group_8" = "Group_8",
-                                         "Group_9" = "Group_9",
-                                         "Group_10" = "Group_10"))),
          mainPanel(
-             fluidRow(align='Top',
-                      column(2,
-                             actionButton("addrow","Add Contrast")
-                      )),
-              
-        mainPanel(
-            tableOutput("contrastTable"))
-     )),
+           h4("Contrasts: "),
+           uiOutput("choice1"),
+           uiOutput("choice2"),
+         mainPanel(
+           fluidRow(align='Top',
+                    column(2,
+                           actionButton("addrow","Add Contrast")
+                    )),
+           mainPanel(
+             tableOutput("contrastTable"))
+         ))),
+     
+ 
+     # div(id= "hide3",
+     #      # conditionalPanel(
+     #      #   condition = "input.number == '1'",
+     #        mainPanel(
+     #          h4("Contrasts: "),
+     #          selectizeInput("selectIn1", "Select", 
+     #                         choices = c("Group_1" = "Group_1",
+     #                                     "Group_2" = "Group_2",
+     #                                     "Group_3" = "Group_3",
+     #                                     "Group_4" = "Group_4",
+     #                                     "Group_5" = "Group_5",
+     #                                     "Group_6" = "Group_6",
+     #                                     "Group_7" = "Group_7",
+     #                                     "Group_8" = "Group_8",
+     #                                     "Group_9" = "Group_9",
+     #                                     "Group_10" = "Group_10")),
+     #          selectizeInput("selectIn2", "Versus",
+     #                         choices = c("Group_1" = "Group_1",
+     #                                     "Group_2" = "Group_2",
+     #                                     "Group_3" = "Group_3",
+     #                                     "Group_4" = "Group_4",
+     #                                     "Group_5" = "Group_5",
+     #                                     "Group_6" = "Group_6",
+     #                                     "Group_7" = "Group_7",
+     #                                     "Group_8" = "Group_8",
+     #                                     "Group_9" = "Group_9",
+     #                                     "Group_10" = "Group_10"))),
+     #     mainPanel(
+     #         fluidRow(align='Top',
+     #                  column(2,
+     #                         actionButton("addrow","Add Contrast")
+     #                  )),
+     #          
+     #    mainPanel(
+     #        tableOutput("contrastTable"))
+     # )),
     
     shinyjs::hidden(
       div(id='hideAnalysis',
@@ -177,8 +193,10 @@ shinyUI(
           sidebarPanel(
             width=12,
             fluidRow(align='Top',
+              # column(3,
+              #        numericInput("NumContrasts", label=h6("Choose contrast to show"),value="1", width="150px")),
               column(3,
-                     numericInput("NumContrasts", label=h6("Choose contrast to show"),value="1", width="150px")),
+                     uiOutput("displayContrast")),
               column(3,
                      numericInput("pval", label=h6("P-value threshold for DEGs"),value=0.05, width="200px")),
               column(3,
@@ -212,6 +230,15 @@ shinyUI(
           )
         )
         )
+      )
+    ),
+    shinyjs::hidden(
+      div(id='hideDownloads',
+          mainPanel(
+            #actionButton(inputId="rep",label="Generate Report"),
+            downloadButton('downloadReport', label = 'Download Report'),
+            downloadButton('downloadTables', label = 'Download Tables')
+          )
       )
     )
    )
