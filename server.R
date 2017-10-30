@@ -139,9 +139,9 @@ shinyServer(function(input, output) {
         for (k in 1:length(GSMList(gds)))
         {
           if (is.null(Meta(GSMList(gds)[[k]])$description)) {     #error handling, some records don't have descriptions
-            mytable[k,] <-c(Meta(GSMList(gds)[[k]])$geo_accession, Meta(GSMList(gds)[[k]])$title, 'No data available')
+            mytable[k,] <-c(Meta(GSMList(gds)[[k]])$geo_accession[1], Meta(GSMList(gds)[[k]])$title[1], 'No data available')
           } else {
-            mytable[k,] <-c(Meta(GSMList(gds)[[k]])$geo_accession, Meta(GSMList(gds)[[k]])$title, Meta(GSMList(gds)[[k]])$description)
+            mytable[k,] <-c(Meta(GSMList(gds)[[k]])$geo_accession[1], Meta(GSMList(gds)[[k]])$title[1], Meta(GSMList(gds)[[k]])$description[1])
           }
         }
         
