@@ -175,12 +175,13 @@ shinyServer(function(input, output) {
 
       #error handling names that conflict with DEG script
       tempGroup = input$group1
-      if (toupper(tempGroup)==toupper('Control')){
-        withProgress(message='Changing name for compatibility with R...', value=1, {
-        tempGroup='Control1'
-        Sys.sleep(2)
-        })
-      }
+      tempGroup = make.names(tempGroup)
+      # if (toupper(tempGroup)==toupper('Control')){
+      #   withProgress(message='Changing name for compatibility with R...', value=1, {
+      #   tempGroup='Control1'
+      #   Sys.sleep(2)
+      #   })
+      # }
       v$data[input$mytable_rows_selected, "group" ] <- tempGroup
       
       #print( "Error??3")

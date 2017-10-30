@@ -77,6 +77,8 @@ shinyUI(
           #   )),
           column(3, 
                  uiOutput("ui"),
+                 h6("(Name may be changed for compatibility with R)"),
+                 br(),
                  h5("Select samples below and click \"Define\""),
                  actionButton("button2", "Define")
       ))
