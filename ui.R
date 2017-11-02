@@ -79,7 +79,7 @@ shinyUI(
                  uiOutput("ui"),
                  h6("(Name may be changed for compatibility with R)"),
                  br(),
-                 h5("Select samples below and click \"Define\""),
+                 h5("Select samples below and click \"Define\" to add to group"),
                  actionButton("button2", "Define")
       ))
     ),
@@ -208,6 +208,7 @@ shinyUI(
             ),
             actionButton(inputId="analyze",label="Start")),
         mainPanel(
+          br(),br(),br(),
           navbarPage(title = "Results",
                      navbarMenu (title="Pre-normalization QC plots",
                                  tabPanel("Histogram",plotOutput("rawhist")),

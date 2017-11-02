@@ -43,6 +43,8 @@ library(pd.moex.1.0.st.v1)
 library(moex10sttranscriptcluster.db)
 library(pd.hg.u133b)
 library(hgu133b.db)
+library(pd.hugene.1.1.st.v1)
+library(hugene11sttranscriptcluster.db)
 #library(GSEA)
 library(limma)
 library(oligo)
@@ -149,9 +151,6 @@ shinyServer(function(input, output) {
         
         mytable$group <- ""
         v$data <- mytable
-        
-        #testing
-        write.csv(v$data, file = '/Users/valdezkm/Desktop/testTable.csv')
         
         incProgress(0.25)
         output$mytable = DT::renderDataTable({
@@ -376,7 +375,7 @@ shinyServer(function(input, output) {
       colnames(pData(celfiles))[2] = 'SampleID'     
       cat(celfiles@annotation,file="annotation.txt")
       
-      if (celfiles@annotation!="pd.hg.u133.plus.2" & celfiles@annotation!="pd.mogene.2.0.st" & celfiles@annotation!="pd.hugene.2.0.st" & celfiles@annotation!="pd.clariom.s.human.ht" & celfiles@annotation!="pd.clariom.s.human" & celfiles@annotation!="pd.clariom.s.mouse.ht" & celfiles@annotation!="pd.clariom.s.mouse" & celfiles@annotation!='pd.mouse430.2' & celfiles@annotation!='pd.hg.u133a' & celfiles@annotation!='pd.hugene.1.0.st.v1' & celfiles@annotation!='pd.mogene.1.0.st.v1' & celfiles@annotation!='pd.hg.u133a.2' & celfiles@annotation!='pd.huex.1.0.st.v2' & celfiles@annotation!='pd.hg.u219' & celfiles@annotation!='pd.mg.u74av2' & celfiles@annotation!='pd.mouse430a.2' & celfiles@annotation!='pd.moe430a' & celfiles@annotation!='pd.hg.u95av2' & celfiles@annotation!='pd.hta.2.0' & celfiles@annotation!='pd.moex.1.0.st.v1' & celfiles@annotation!='pd.hg.u133b') {
+      if (celfiles@annotation!="pd.hg.u133.plus.2" & celfiles@annotation!="pd.mogene.2.0.st" & celfiles@annotation!="pd.hugene.2.0.st" & celfiles@annotation!="pd.clariom.s.human.ht" & celfiles@annotation!="pd.clariom.s.human" & celfiles@annotation!="pd.clariom.s.mouse.ht" & celfiles@annotation!="pd.clariom.s.mouse" & celfiles@annotation!='pd.mouse430.2' & celfiles@annotation!='pd.hg.u133a' & celfiles@annotation!='pd.hugene.1.0.st.v1' & celfiles@annotation!='pd.mogene.1.0.st.v1' & celfiles@annotation!='pd.hg.u133a.2' & celfiles@annotation!='pd.huex.1.0.st.v2' & celfiles@annotation!='pd.hg.u219' & celfiles@annotation!='pd.mg.u74av2' & celfiles@annotation!='pd.mouse430a.2' & celfiles@annotation!='pd.moe430a' & celfiles@annotation!='pd.hg.u95av2' & celfiles@annotation!='pd.hta.2.0' & celfiles@annotation!='pd.moex.1.0.st.v1' & celfiles@annotation!='pd.hg.u133b' & celfiles@annotation!='pd.hugene.1.1.st.v1') {
         #cat("Please sort your phenotype on sample name and upload it again. \n")
         info(paste0("Affymetrix platform: ",celfiles@annotation," NOT supported. Leaving..."))
         stopApp(-1)
@@ -531,6 +530,10 @@ shinyServer(function(input, output) {
                                                     } else {
                                                       if (raw()@annotation=='pd.hg.u133b') {
                                                         Annot <- data.frame(ACCNUM=sapply(contents(hgu133bACCNUM), paste, collapse=", "), SYMBOL=sapply(contents(hgu133bSYMBOL), paste, collapse=", "), DESC=sapply(contents(hgu133bGENENAME), paste, collapse=", "))
+                                                      } else {
+                                                        if (raw()@annotation=='pd.hugene.1.1.st.v1') {
+                                                          Annot <- data.frame(ACCNUM=sapply(contents(hugene11sttranscriptclusterACCNUM), paste, collapse=", "), SYMBOL=sapply(contents(hugene11sttranscriptclusterSYMBOL), paste, collapse=", "), DESC=sapply(contents(hugene11sttranscriptclusterGENENAME), paste, collapse=", "))
+                                                        }
                                                       }
                                                     }
                                                   }
@@ -629,7 +632,7 @@ shinyServer(function(input, output) {
           #x2=rownames(fin.dw)
           #gdw=apply(array(as.character(x2)),1,function(z) unlist(strsplit(z, "\\|"))[2])
           
-          if (raw()@annotation=="pd.hg.u133.plus.2" | raw()@annotation=="pd.hugene.2.0.st" | raw()@annotation=="pd.clariom.s.human.ht" | raw()@annotation=="pd.clariom.s.human" | raw()@annotation=='pd.hg.u133a' | raw()@annotation=='pd.hugene.1.0.st.v1' | raw()@annotation=='pd.hg.u133a.2' | raw()@annotation=='pd.huex.1.0.st.v2' | raw()@annotation=='pd.hg.u219' | raw()@annotation=='pd.ht.hg.u133.plus.pm' | raw()@annotation=='pd.hg.u95av2' | raw()@annotation=='pd.hta.2.0' | raw()@annotation=='pd.hg.u133b') 
+          if (raw()@annotation=="pd.hg.u133.plus.2" | raw()@annotation=="pd.hugene.2.0.st" | raw()@annotation=="pd.clariom.s.human.ht" | raw()@annotation=="pd.clariom.s.human" | raw()@annotation=='pd.hg.u133a' | raw()@annotation=='pd.hugene.1.0.st.v1' | raw()@annotation=='pd.hg.u133a.2' | raw()@annotation=='pd.huex.1.0.st.v2' | raw()@annotation=='pd.hg.u219' | raw()@annotation=='pd.ht.hg.u133.plus.pm' | raw()@annotation=='pd.hg.u95av2' | raw()@annotation=='pd.hta.2.0' | raw()@annotation=='pd.hg.u133b' | raw()@annotation=='pd.hugene.1.1.st.v1') 
           {
             cat(fin.up$SYMBOL,file=(paste0(input$ProjectID,'_',names(deg()$mylist[num]),'_Top500_Up.txt')), sep='\n')
             cat(fin.dw$SYMBOL,file=(paste0(input$ProjectID,'_',names(deg()$mylist[num]),'_Top500_Down.txt')),sep='\n')
