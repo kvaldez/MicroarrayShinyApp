@@ -90,6 +90,18 @@ shinyServer(function(input, output) {
     })
   )
   observeEvent(
+    input$CELbutton,
+    isolate({
+      shinyjs::show("hide1")
+    })
+  )
+  observeEvent(
+    input$CELbutton,
+    isolate({
+      shinyjs::show("hideCEL")
+    })
+  )
+  observeEvent(
     input$button2,
     isolate({
       shinyjs:: show("hide3")
@@ -119,6 +131,34 @@ shinyServer(function(input, output) {
       shinyjs:: show("hideDownloads")
     })
   )
+  
+  
+  observeEvent(
+    input$CELbutton,
+    isolate({
+      #CEL file input
+      myfiles=input$Indir
+      cels = myfiles$name
+    
+      mytableCEL=matrix("",length(cels),1)
+      colnames(mytableCEL)=c("file name")
+
+      for (k in 1:length(cels))
+      {
+        mytableCEL[k,]<-c(cels[k])
+      }
+      mytableCEL <- data.frame(mytableCEL)
+      
+      mytableCEL$group <- ""
+      v$data <- mytableCEL
+      
+      output$mytableCEL = DT::renderDataTable({
+        if (is.null(v$data)) return()
+        if (is.null(v$platform)) warning()
+        DT::datatable(v$data, options = list(lengthMenu = c(2,4,6,8), pageLength = 8))
+    })
+    })
+  )
  
   observeEvent(
     input$button, 
@@ -130,6 +170,7 @@ shinyServer(function(input, output) {
         
         incProgress(0.25)
         
+
         #gds <- getGEO(input$gseid, GSEMatrix = F,getGPL=T,AnnotGPL=T)
         gds <- getGEO(id, GSEMatrix = F,getGPL=T,AnnotGPL=T)
         
@@ -137,6 +178,7 @@ shinyServer(function(input, output) {
         
         mytable=matrix("",length(GSMList(gds)),3)
         colnames(mytable)=c("gsm","title","description")
+        
         
         for (k in 1:length(GSMList(gds)))
         {
@@ -146,6 +188,7 @@ shinyServer(function(input, output) {
             mytable[k,] <-c(Meta(GSMList(gds)[[k]])$geo_accession[1], Meta(GSMList(gds)[[k]])$title[1], Meta(GSMList(gds)[[k]])$description[1])
           }
         }
+        # }
         
         mytable <- data.frame(mytable)
         
@@ -175,15 +218,17 @@ shinyServer(function(input, output) {
       #error handling names that conflict with DEG script
       tempGroup = input$group1
       tempGroup = make.names(tempGroup)
-      # if (toupper(tempGroup)==toupper('Control')){
-      #   withProgress(message='Changing name for compatibility with R...', value=1, {
-      #   tempGroup='Control1'
-      #   Sys.sleep(2)
-      #   })
-      # }
       v$data[input$mytable_rows_selected, "group" ] <- tempGroup
+      v$data[input$mytableCEL_rows_selected, "group"] <- tempGroup
       
       #print( "Error??3")
+    
+      output$mytableCEL = DT::renderDataTable({
+        
+        if (is.null(v$data)) return()
+        if (is.null(v$platform)) warning()
+        DT::datatable(v$data, options = list(lengthMenu = c(2,4,6,8,10), pageLength = 8))
+      })
       
       output$mytable = DT::renderDataTable({
         
@@ -191,6 +236,7 @@ shinyServer(function(input, output) {
         if (is.null(v$platform)) warning()
         DT::datatable(v$data, options = list(lengthMenu = c(2,4,6,8,10), pageLength = 8))
       })
+      
     })
   )
   
@@ -208,7 +254,7 @@ shinyServer(function(input, output) {
     isolate({
       output$choice1 <- renderUI({
         g = unique(v$data$group)
-        selectizeInput("selectIn1","Select",choices = g)
+        selectizeInput("selectIn1","Select:",choices = g)
       })
     })
   })
@@ -217,7 +263,7 @@ shinyServer(function(input, output) {
     isolate({
       output$choice2 <- renderUI({
         g = unique(v$data$group)
-        selectizeInput("selectIn2","Versus",choices = g)
+        selectizeInput("selectIn2","Versus Reference Group:",choices = g)
       })
     })
   })
@@ -348,31 +394,44 @@ shinyServer(function(input, output) {
       raw <- reactive(
         {
       withProgress(message = 'Loading files...', value = 0.25, {
+        
       id=input$gseid
+        
+      if (id=='8 digit GSE code'){
+        myfiles = input$Indir
+        cels = myfiles$datapath
+        Pheno = v$data
+        SampleName = myfiles$name
+        pd = AnnotatedDataFrame(Pheno)
+        celfiles = read.celfiles(cels, phenoData = pd)
+        colnames(pData(celfiles))[1] = 'SampleID'  
+      } else {
+        
       id = gsub(" ","",id,fixed=TRUE) 
-      
       system(paste0('rm *.CEL.gz'))        #removes previous CEL files
       getGEOSuppFiles(id, makeDirectory = T, baseDir = getwd())
       fileID = paste0(id, '_RAW.tar')
       #system(paste0('tar -xvf', fileID))
       untar(paste0(getwd(),'/',id,'/',fileID))
       incProgress(0.25)
- 
+      
       #cels = paste0(Pheno$gsm,'_',Pheno$title,'.CEL.gz')   #adds filename
       Pheno = v$data
       SampleName = list.files(pattern = '/*CEL.gz')    #list contents of new directory with zipped CEL files
-      rownames(Pheno) = SampleName
-      cels = SampleName
       
       if (length(grep('*CEL*',SampleName,ignore.case = T)) == 0) {
         info("Raw files must be CEL files")
       }
+      rownames(Pheno) = SampleName
+      cels = SampleName
       
       incProgress(0.25)
       
       pd = AnnotatedDataFrame(Pheno)
       celfiles = read.celfiles(cels, phenoData = pd)
-      colnames(pData(celfiles))[2] = 'SampleID'     
+      colnames(pData(celfiles))[2] = 'SampleID'    
+      }
+      
       cat(celfiles@annotation,file="annotation.txt")
       
       if (celfiles@annotation!="pd.hg.u133.plus.2" & celfiles@annotation!="pd.mogene.2.0.st" & celfiles@annotation!="pd.hugene.2.0.st" & celfiles@annotation!="pd.clariom.s.human.ht" & celfiles@annotation!="pd.clariom.s.human" & celfiles@annotation!="pd.clariom.s.mouse.ht" & celfiles@annotation!="pd.clariom.s.mouse" & celfiles@annotation!='pd.mouse430.2' & celfiles@annotation!='pd.hg.u133a' & celfiles@annotation!='pd.hugene.1.0.st.v1' & celfiles@annotation!='pd.mogene.1.0.st.v1' & celfiles@annotation!='pd.hg.u133a.2' & celfiles@annotation!='pd.huex.1.0.st.v2' & celfiles@annotation!='pd.hg.u219' & celfiles@annotation!='pd.mg.u74av2' & celfiles@annotation!='pd.mouse430a.2' & celfiles@annotation!='pd.moe430a' & celfiles@annotation!='pd.hg.u95av2' & celfiles@annotation!='pd.hta.2.0' & celfiles@annotation!='pd.moex.1.0.st.v1' & celfiles@annotation!='pd.hg.u133b' & celfiles@annotation!='pd.hugene.1.1.st.v1') {
@@ -426,17 +485,16 @@ shinyServer(function(input, output) {
             #)
             
             for (k in 1:nb) {
-              if ((contra[k,1] %in% labfacs) & (contra[k,2] %in% labfacs) )
-              {
+              #if ((contra[k,1] %in% labfacs) & (contra[k,2] %in% labfacs) )
+              #{
                 cons=c(cons,paste(contra[k,1],"-",contra[k,2],sep=""))
-              } else {
-                #cat("One of the groups in contrasts file at line :",k+1,"does not match a group in phenotype file..Quitting!!!\n")
-                info('One of the groups in contrast file does not match a group in phenotype file. Make sure names match and upload again.')
-                print( contra )
-                stopApp(-1)
-              }
+              #} else {
+              #  cat("One of the groups in contrasts file at line :",k+1,"does not match a group in phenotype file..Quitting!!!\n")
+              #  info('One of the groups in contrast file does not match a group in phenotype file. Make sure names match and upload again.')
+              #  print( contra )
+              #  stopApp(-1)
+              #}
             }
-            
             
             myfactor <- factor(pData(norm())$group)
             design1 <- model.matrix(~0+myfactor)

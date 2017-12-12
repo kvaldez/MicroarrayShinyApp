@@ -5,6 +5,8 @@ library(shinyjs)
 library(rglwidget)
 library(plotly)
 
+options(shiny.maxRequestSize = 500*1024^2)
+
 shinyUI(
   fluidPage(
     tags$head(
@@ -42,8 +44,15 @@ shinyUI(
       ),
       column(3,
         fileInput("Indir", label=h6("Select CEL files"),multiple =T)
-      )
+      ),
+      br(),
+      br(),
+      actionButton(inputId="CELbutton", label="Display")
     ),
+    
+    br(),
+    br(),
+    
     conditionalPanel(
       condition = "input.analysisType == 'GEO'",
       fluidRow(),
@@ -122,13 +131,17 @@ shinyUI(
     br(),
     shinyjs::hidden(
       div(id= "hide2",
-        
-    
-    br(),
-    br(),
-
+          br(),
+          br(),
           fluidRow(column(10, wellPanel(DT:: dataTableOutput("mytable"))))
         )),
+    
+    shinyjs::hidden(
+      div(id="hideCEL",
+          br(),
+          br(),
+          fluidRow(column(10, wellPanel(DT:: dataTableOutput("mytableCEL"))))
+      )),
     
     # shinyjs:: hidden(
     #   div(id= "hide3",
