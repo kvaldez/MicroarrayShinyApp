@@ -218,6 +218,7 @@ shinyServer(function(input, output) {
       #error handling names that conflict with DEG script
       tempGroup = input$group1
       tempGroup = make.names(tempGroup)
+      
       v$data[input$mytable_rows_selected, "group" ] <- tempGroup
       v$data[input$mytableCEL_rows_selected, "group"] <- tempGroup
       
@@ -401,9 +402,13 @@ shinyServer(function(input, output) {
         myfiles = input$Indir
         cels = myfiles$datapath
         Pheno = v$data
+        row.names(Pheno) = Pheno$file.name
         SampleName = myfiles$name
         pd = AnnotatedDataFrame(Pheno)
         celfiles = read.celfiles(cels, phenoData = pd)
+        
+        celfiles
+        
         colnames(pData(celfiles))[1] = 'SampleID'  
       } else {
         
@@ -422,7 +427,7 @@ shinyServer(function(input, output) {
       if (length(grep('*CEL*',SampleName,ignore.case = T)) == 0) {
         info("Raw files must be CEL files")
       }
-      rownames(Pheno) = SampleName
+      rownames(Pheno) = Pheno$title
       cels = SampleName
       
       incProgress(0.25)
@@ -777,17 +782,20 @@ shinyServer(function(input, output) {
   
   output$rawbox=renderPlot(
     {
+      par(mar=c(8,4,4,2))
       boxplot(raw(), col=colors, which="all", main="Boxplots before normalization",las=2,names=pData(raw())$SampleID)
     }
   )
   output$rle=renderPlot(
     {
-      RLE(qc(), main="RLE plot",names=pData(raw())$SampleID, col=colors)
+      par(mar=c(8,4,4,2))
+      RLE(qc(), main="RLE plot",names=pData(raw())$SampleID, col=colors, las=2)
     }
   )
   output$nuse=renderPlot(
     {
-      NUSE(qc(), main="NUSE plot",names=pData(raw())$SampleID, col=colors)
+      par(mar=c(8,4,4,2))
+      NUSE(qc(), main="NUSE plot",names=pData(raw())$SampleID, col=colors, las=2)
     }
   )
   output$rmahist=renderPlot(
@@ -826,6 +834,7 @@ shinyServer(function(input, output) {
   }
   output$rmabox=renderPlot(
     {
+      par(mar=c(8,4,4,2))
       boxplot(norm(),col=colors, main="Boxplots after RMA normalization",las=2,names=pData(norm())$SampleID)
     }
   )
@@ -848,7 +857,7 @@ shinyServer(function(input, output) {
         bg3d('white')
         plot3d(pca$x[,1:3],col=colors, type='s',size=2)
         group.v=as.vector(pData(norm())$SampleID)
-        text3d(pca$x, pca$y, pca$z, group.v, cex=0.6, adj=2)
+        text3d(pca$x, pca$y, pca$z, group.v, cex=0.6, adj=1.5)
         par3d(mouseMode = "trackball")
         rglwidget()
       })

@@ -43,11 +43,14 @@ shinyUI(
         textInput("ProjectID", label=h6("Project ID:"), value="CCBR", width="150px")
       ),
       column(3,
-        fileInput("Indir", label=h6("Select CEL files"),multiple =T)
+        fileInput("Indir", label=h6("Select CEL files"),multiple =T),
+        h5("Choose short descriptive file names (eg Ctl1.CEL, KO1.CEL) with no spaces")
       ),
       br(),
       br(),
-      actionButton(inputId="CELbutton", label="Display")
+      actionButton(inputId="CELbutton", label="Display"),
+      br(),
+      br()
     ),
     
     br(),
@@ -68,6 +71,8 @@ shinyUI(
     ),
     
     
+    br(),
+    br(),
     br(),
     br(),
     
@@ -243,7 +248,7 @@ shinyUI(
                                 tabPanel("Pathways for Downregulated Genes",DT::dataTableOutput("topDown")),
                                 tabPanel("Interactive Volcano Plot",plotly::plotlyOutput('volcano'))
                     )
-          )
+          ),br(),br(),br(),br()
         )
         )
       )
