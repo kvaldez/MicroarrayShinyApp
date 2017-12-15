@@ -70,7 +70,7 @@ library(htmltools)
 library(heatmaply)
 library(Biobase)
 
-setwd('/Users/valdezkm/Documents/MicroarrayPipeline_VERSION2/MicroarrayShinyApp')
+#setwd('/Users/valdezkm/Documents/MicroarrayPipeline_VERSION2/MicroarrayShinyApp')
 
 shinyServer(function(input, output) {
   
@@ -237,7 +237,6 @@ shinyServer(function(input, output) {
         if (is.null(v$platform)) warning()
         DT::datatable(v$data, options = list(lengthMenu = c(2,4,6,8,10), pageLength = 8))
       })
-      
     })
   )
   
@@ -406,10 +405,8 @@ shinyServer(function(input, output) {
         SampleName = myfiles$name
         pd = AnnotatedDataFrame(Pheno)
         celfiles = read.celfiles(cels, phenoData = pd)
-        
-        celfiles
-        
         colnames(pData(celfiles))[1] = 'SampleID'  
+        
       } else {
         
       id = gsub(" ","",id,fixed=TRUE) 
