@@ -954,9 +954,9 @@ shinyServer(function(input, output) {
         log_FC=dat$logFC
         log_pval=-log10(dat$P.Value)
         Significant=rep("NotSignificant",length(log_FC))
-        Significant[which(dat$P.Value<0.05 & abs(dat$logFC)>=1)]="Significant&LogFoldChange"
-        Significant[which(dat$P.Value<0.05 & abs(dat$logFC)<1)]="Significant"
-        Significant[which(dat$P.Value>=0.05 & abs(dat$logFC)>=1)]="LogFoldChange"
+        Significant[which(dat$P.Value<0.05 & abs(dat$logFC)>=1)]="AbsLogFoldChange>1 & PValue<0.05"
+        Significant[which(dat$P.Value<0.05 & abs(dat$logFC)<1)]="PValue<0.05"
+        Significant[which(dat$P.Value>=0.05 & abs(dat$logFC)>=1)]="AbsLogFoldChange>1"
         gene=dat$SYMBOL
         volcano_data=as.data.frame(cbind(gene,log_FC,log_pval,Significant))
         incProgress(0.50)

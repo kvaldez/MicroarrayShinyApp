@@ -44,7 +44,7 @@ shinyUI(
       ),
       column(3,
         fileInput("Indir", label=h6("Select CEL files"),multiple =T),
-        h5("Choose short descriptive file names (eg Ctl1.CEL, KO1.CEL) with no spaces")
+        h5("Choose short descriptive file names with no spaces (eg Ctl1.CEL, KO1.CEL)")
       ),
       br(),
       br(),
